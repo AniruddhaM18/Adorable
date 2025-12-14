@@ -4,7 +4,7 @@ import path from "path";
 import { BASE_TEMPLATE } from "./baseTemplate.js";
 
 
-export async function createSndbox(){
+export async function createSandbox(files: { path: string; content: string; }[]){
     //we create a sandbox
 const sbx = await Sandbox.create()
 console.log(`Sandbox created ${sbx.sandboxId}`);
@@ -47,6 +47,5 @@ return {
     sandboxId: sbx.sandboxId,
     url: `https://${url}`
 }
-
 }
 
