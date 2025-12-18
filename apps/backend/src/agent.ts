@@ -8,32 +8,59 @@ import { AIMessage, BaseMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js"; 
 import { getSystemPrompt } from "./prompt.js";
 
+
+//type
+type SandboxResult = {
+  previewUrl: string;
+  files: {
+    path: string;
+    content: string;
+  }[];
+};
+
+
 // --- 1. Define the Tool ---
 const fileSchema = z.object({
     path: z.string().describe("File path (e.g., src/components/Header.jsx)"),
     content: z.string().describe("Full code content")
 });
 
+function normalizeFileContent(content: string): string {
+  if (content.includes("\\n")) {
+    return content
+      .replace(/\\n/g, "\n")
+      .replace(/\\"/g, '"');
+  }
+  return content;
+}
+
 const createTool = tool(
-    async ({ files }) => {
-        console.log("🛠️ Tool Invoked: Creating Sandbox...");
-        try {
-            // This runs the actual E2B logic
-            const result = await createSandbox(files);
-            return `SUCCESS: Sandbox created! Preview URL: ${result.url}`;
-        } catch (err: any) {
-            console.error(" Tool Error:", err);
-            return `Error deploying: ${err.message}`;
-        }
-    },
-    {
-        name: "create_app",
-        description: "Generates the application, writes files, and returns a live preview URL.",
-        schema: z.object({
-            files: z.array(fileSchema)
-        })
-    }
+  async ({ files }) => {
+    console.log("Tool Invoked - Creating Sandbox...");
+    console.log("FILES RECEIVED BY TOOL:", JSON.stringify(files, null, 2));
+
+    const normalizedFiles = files.map((f: any) => ({
+      path: f.path,
+      content: normalizeFileContent(f.content),
+    }));
+
+    console.log("NORMALIZED FILES:", JSON.stringify(normalizedFiles.map(f => ({ path: f.path, contentLength: f.content.length })), null, 2));
+
+    const result = await createSandbox(normalizedFiles);
+
+    return {
+      previewUrl: result.url,
+      files: normalizedFiles,
+    };
+  },
+  {
+    name: "create_app",
+    schema: z.object({
+      files: z.array(fileSchema),
+    }),
+  }
 );
+
 
 // --- 2. Initialize LLM (OpenRouter) ---
 const llm = new ChatOpenAI({
@@ -70,7 +97,7 @@ async function agentNode(state: typeof MessagesAnnotation.State) {
   return { messages: [response] };
 }
 
-// --- 4. Conditional Logic ---
+// Conditional Logic
 function shouldContinue(state: typeof MessagesAnnotation.State) {
     const lastMessage = state.messages[state.messages.length - 1] as AIMessage;
 
@@ -88,35 +115,44 @@ const workflow = new StateGraph(MessagesAnnotation)
     .addNode("agent", agentNode)
     .addNode("tools", toolNode)
     .addEdge("__start__", "agent")
-    .addConditionalEdges(
-        "agent",
-        shouldContinue,
+    .addConditionalEdges("agent", shouldContinue,
         {
             tools: "tools",
             __end__: END
         }
     )
-    .addEdge("tools", "agent"); // Loop back to agent to report result
+    .addEdge("tools", END); // end here
 
 export const appGraph = workflow.compile();
 
-export async function runUserRequest(userInput: string){
-    const systemPrompt = getSystemPrompt();
+export async function runUserRequest( userInput: string ): Promise<SandboxResult> {
+  const systemPrompt = getSystemPrompt();
 
-    const inputs = {
-        messages: [
-            {role: "system", content: systemPrompt}, 
-            {role: "user", content: userInput}
-        ]
-    }
-    // .invoke() waits for the whole process to finish (instead of stream)
-    const finalState = await appGraph.invoke(inputs);
+  const inputs = {
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userInput },
+    ],
+  };
 
-    //get last message from the ai
-    const lastMessage = finalState.messages[finalState.messages.length -1];
+  const finalState = await appGraph.invoke(inputs);
 
-    return lastMessage.content;
+const lastMessage = finalState.messages[finalState.messages.length - 1];
 
-};
+if (!lastMessage) {
+  throw new Error("No final message found");
+}
+
+if (typeof lastMessage.content === "string") {
+  // If it's not JSON, return a clean error
+  try {
+    return JSON.parse(lastMessage.content);
+  } catch {
+    throw new Error(lastMessage.content);
+  }
+}
+
+return lastMessage.content as unknown as SandboxResult;
 
 
+}
