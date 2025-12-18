@@ -1,0 +1,1 @@
+{"root":["./src/agent.ts","./src/basetemplate.ts","./src/config.ts","./src/index.ts","./src/prompt.ts","./src/sandbox.ts","./src/controllers/projectcontroller.ts","./src/routes/projectrouter.ts"],"version":"5.9.3"}

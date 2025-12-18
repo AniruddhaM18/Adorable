@@ -8,9 +8,9 @@ export const BASE_TEMPLATE = {
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host --port 5173",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host --port 5173"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -34,14 +34,14 @@ export default defineConfig({
   plugins: [react()],
 
   server: {
-    host: "0.0.0.0",
+    host: true,
     port: 5173,
     strictPort: true,
     allowedHosts: true,     // DEV SERVER
   },
 
   preview: {
-    host: "0.0.0.0",
+    host: true,
     port: 5173,
     strictPort: true,
     allowedHosts: "all",     // REQUIRED FOR e2b
