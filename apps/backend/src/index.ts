@@ -10,21 +10,6 @@ app.use(express.json());
 
 app.use("/api/project", projectRouter);
 
-// app.post("/create/sandbox", async(req, res) => {
-//     try{
-//         const sandbox = await createSandbox();
-//         res.status(201).json({
-//             success: true,
-//             sandbox
-//         });
-//     }catch(err){
-//         console.log(err);
-//         res.status(500).json({
-//             success: false,
-//             message: "failed to create sandbox"
-//         })
-//     }
-// })
 
 app.post("/api/generate", async(req, res)=> {
     try {
@@ -48,7 +33,10 @@ app.post("/api/generate", async(req, res)=> {
         const result = await runUserRequest(prompt);
         res.json({
             success:true,
-            message: result
+            data: {
+                previewUrl: result.previewUrl,
+                files: result.files
+            }
         });
     }catch(err: any){
         console.error(err);
