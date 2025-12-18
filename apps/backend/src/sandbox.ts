@@ -23,9 +23,13 @@ console.log(`Sandbox created ${sbx.sandboxId}`);
 const finalFileStructure: Record<string, string> = { ...BASE_TEMPLATE };
 
 generatedFiles.forEach(file => {
-    //overrites existing files from base template
-    finalFileStructure[file.path] = file.content;
+  if (file.path === "package.json") {
+    console.warn("LLM attempted to overwrite package.json — ignored");
+    return;
+  }
+  finalFileStructure[file.path] = file.content;
 });
+
 const uniqueDirs = new Set(
     Object.keys(finalFileStructure).map(p => path.dirname(p))
 );
@@ -42,15 +46,25 @@ if(dirsToCreate.length > 0) {
 
 //write files, concurrent writing(its faster)
 console.log("Writing files to sandbox");
+//write files, concurrent writing(its faster)
+console.log("Writing files to sandbox");
+console.log("FILES TO WRITE:", Object.keys(finalFileStructure));
+
 await Promise.all(
-    Object.entries(finalFileStructure).map(([filePath, content]) =>
-            sbx.files.write(filePath, content)
-   )
+  Object.entries(finalFileStructure).map(([filePath, content]) => {
+    console.log(`Writing ${filePath} (${content.length} chars)`);
+    return sbx.files.write(filePath, content);
+  })
 );
 
-//installing dependancies
+// DEBUG HERE
+const pkg = await sbx.files.read("package.json");
+console.log("RAW PACKAGE.JSON ↓↓↓\n", pkg);
+
+// npm install
 console.log("installing dependancies");
 await sbx.commands.run("npm install");
+
 
 //starting the dev server in background
 await sbx.commands.run("npm run dev", {background: true});
@@ -67,47 +81,4 @@ const port = 5173;
         url: url
     };
 }
-
-
-
-
-
-
-
-// for(const [filePath, content] of Object.entries(BASE_TEMPLATE)) {
-//     const dir = path.dirname(filePath);
-
-//     //create a directory if its not at the root
-//     if(dir!== '.' && dir !=='/'){
-//         await sbx.commands.run(`mkdir -p ${dir}`);
-//     }
-//     //writing the files
-//     await sbx.files.write(filePath, content);
-//     console.log(`written: ${filePath}`)
-// }
-
-
-// //installing dependancies
-// console.log("installing dependancies");
-// await sbx.commands.run("npm install");
-
-// //start the dev server in the background
-// console.log("starting dev server in background");
-// // 'background: true' is CRITICAL for servers, otherwise code hangs here
-// const cmd = await sbx.commands.run("npm run dev", {background: true});
-
-// //Expose the port (Lovable-style)
-// // Assuming your Vite/Next.js app runs on port 5173 or 3000. 
-// // You can force a specific port in your package.json scripts (e.g., "vite --port 3000")
-// const port = 5173 
-// const url = sbx.getHost(port);
-
-// console.log(`\nYour app is running. Access it here:\nhttps://${url}`);
-
-// // Keep the process alive so the sandbox doesn't die immediately
-// // (or rely on your Express server to keep the node process running)
-// return {
-//     sandboxId: sbx.sandboxId,
-//     url: `https://${url}`
-// }
 
