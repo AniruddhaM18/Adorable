@@ -10,7 +10,6 @@ type GeneratedFile = {
     content: string
 }
 
-
 export async function createSandbox(generatedFiles: GeneratedFile[]){
 //we create a sandbox
 const sbx = await Sandbox.create()

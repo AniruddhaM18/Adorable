@@ -1,8 +1,5 @@
 import express from "express";
 import projectRouter from "./routes/projectRouter.js";
-import { createSandbox } from "./sandbox.js";
-import { success } from "zod";
-import { fa } from "zod/locales";
 import { runUserRequest } from "./agent.js";
 
 const app = express();
@@ -23,8 +20,7 @@ app.post("/api/generate", async(req, res)=> {
         };
 
         console.log("Prompt recived");
-
-         // Call the LangGraph Agent
+        // Call the LangGraph Agent
         // This will:
         // 1. Talk to LLM
         // 2. Generate Files
