@@ -1,13 +1,11 @@
 
 import './App.css'
-import CodeEditor from './components/CodeEditor'
+import Landing from './landing'
 
 function App() {
   return (
     <>
-    <div style={{backgroundColor: "red"}}>
-     <CodeEditor />
-     </div>
+      <Landing />
     </>
   )
 }
