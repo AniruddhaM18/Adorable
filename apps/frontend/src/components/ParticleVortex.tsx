@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 const ParticleSystem: React.FC = () => {
     const pointsRef = useRef<THREE.Points>(null);
-    const particleCount = 2500; // Reduced particle count for cleaner appearance
+    const particleCount = 1024; // Exact count matching Antigravity (32x32 GPGPU texture)
 
     // Mouse position tracking with smooth easing
     const mouseTarget = useRef({ x: 0, y: 0 });
@@ -48,23 +48,26 @@ const ParticleSystem: React.FC = () => {
         for (let i = 0; i < particleCount; i++) {
             const t = i / particleCount;
 
-            // Distribution: 40% in ring, 60% scattered for more spread
-            const isRingParticle = Math.random() < 0.4;
+            // Scattered distribution mostly outward with some inward fill
+            const baseRingRadius = 3.5;
+
+            // Fewer particles in ring, more scattered with outward bias
+            const isRingParticle = Math.random() < 0.35; // 35% in ring, 65% scattered
 
             let radius;
             if (isRingParticle) {
-                // Ring particles - wider spread
-                radius = 3.5 + (Math.random() - 0.5) * 2.0;
+                // Ring particles with variance
+                radius = baseRingRadius + (Math.random() - 0.5) * 2.0;
             } else {
-                // Scattered particles - expanded range
-                radius = 1.5 + Math.random() * 5.5;
+                // Scattered particles - mostly outward but some inward to fill center
+                radius = baseRingRadius + (Math.random() - 0.3) * 4.5; // Slight inward bias allowed
             }
 
             const angle = t * Math.PI * 24; // Dense spiral distribution
-            // Varied speed with slight randomness for organic feel
-            const speed = 0.25 + Math.random() * 0.35;
+            // SLOWER rotation speed matching Antigravity (0.1-0.15 rad/s)
+            const speed = 0.12 + Math.random() * 0.13;
 
-            const opacity = 0.4 + Math.random() * 0.6;
+            const opacity = 0.6 + Math.random() * 0.2; // Higher opacity (0.6-0.8)
 
             particlesData.current.push({
                 radius,
@@ -87,8 +90,8 @@ const ParticleSystem: React.FC = () => {
             colors[i * 3 + 1] = googleBlue.g;
             colors[i * 3 + 2] = googleBlue.b;
 
-            // Particle sizes - varied for depth
-            sizes[i] = 0.04 + Math.random() * 0.06;
+            // Particle sizes - increased for more prominent fibers
+            sizes[i] = 0.18 + Math.random() * 0.10; // Larger, more visible elements
 
             // Store angle for tangential orientation
             angles[i] = angle;
@@ -129,6 +132,12 @@ const ParticleSystem: React.FC = () => {
         varying float vOpacity;
         varying float vAngle;
         
+        // Rounded rectangle distance function for pill shape
+        float roundedRectangle(vec2 p, vec2 size, float radius) {
+          vec2 d = abs(p) - size + radius;
+          return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - radius;
+        }
+        
         void main() {
           vec2 center = gl_PointCoord - vec2(0.5);
           
@@ -141,12 +150,14 @@ const ParticleSystem: React.FC = () => {
             center.x * sinA + center.y * cosA
           );
           
-          // Create elongated dash shape (4:1 aspect ratio for motion blur)
-          vec2 stretched = rotated * vec2(0.25, 1.8);
-          float dist = length(stretched);
+          // Create pill shape with rounded ends (3:1 aspect ratio) - larger size
+          vec2 pillSize = vec2(0.08, 0.24); // width x length (3:1 ratio) - increased size
+          float cornerRadius = 0.08; // Fully rounded ends (radius = half width)
           
-          // Soft glow with smooth falloff
-          float alpha = smoothstep(0.5, 0.0, dist) * vOpacity;
+          float dist = roundedRectangle(rotated, pillSize, cornerRadius);
+          
+          // Soft glow with smooth falloff for anti-aliasing
+          float alpha = smoothstep(0.02, -0.02, dist) * vOpacity;
           
           gl_FragColor = vec4(vColor, alpha);
         }
@@ -181,9 +192,10 @@ const ParticleSystem: React.FC = () => {
             // Update angle for rotation with delta time for consistent speed
             particle.angle += particle.speed * delta;
 
-            // Very subtle pulsing/breathing effect
-            const pulse = Math.sin(time * 0.6 + particle.angle * 0.3) * 0.08;
-            const currentRadius = particle.baseRadius * (1 + pulse);
+            // Antigravity's dual-frequency breathing effect
+            const pulse1 = Math.sin(time * 1.0) * 0.03;
+            const pulse2 = Math.cos(time * 3.0) * 0.02;
+            const currentRadius = particle.baseRadius * (1 + pulse1 + pulse2);
 
             // Calculate base position with mouse offset (vortex follows mouse)
             let x = Math.cos(particle.angle) * currentRadius + mouseOffsetX;
