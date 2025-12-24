@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import ParticleVortex from './components/ParticleVortex';
 import Navbar from './components/Navbar';
 import { InputBox } from './components/InputBox';
+import { BackgroundRippleEffect } from './components/ui/background-ripple-effect';
 
 const Landing = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -30,28 +30,17 @@ const Landing = () => {
 
     return (
         <div className="min-h-screen bg-white relative overflow-hidden">
-            {/* Background gradient effect */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(147,197,253,0.15),transparent_70%)] pointer-events-none" />
-
-            {/* Rotating Particle Vortex */}
-            <ParticleVortex />
-
-            {/* Floating particles/stars effect */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-20 left-[10%] w-1 h-1 bg-blue-300 rounded-full opacity-40" />
-                <div className="absolute top-40 right-[15%] w-1 h-1 bg-purple-300 rounded-full opacity-30" />
-                <div className="absolute top-[60%] left-[20%] w-1 h-1 bg-blue-200 rounded-full opacity-50" />
-                <div className="absolute top-[30%] right-[25%] w-1 h-1 bg-indigo-300 rounded-full opacity-40" />
-                <div className="absolute bottom-[20%] left-[30%] w-1 h-1 bg-blue-300 rounded-full opacity-35" />
-                <div className="absolute bottom-[40%] right-[10%] w-1 h-1 bg-purple-200 rounded-full opacity-45" />
-            </div>
-
+            
             {/* Navigation */}
             <Navbar />
 
+            {/* Background Ripple Effect (below navbar) */}
+            <div className="absolute inset-x-0 top-[80px] -z-0 pointer-events-none">
+                <BackgroundRippleEffect />
+            </div>
             {/* Hero Section */}
             <section className="relative z-10 max-w-7xl mx-auto px-8 pt-24 pb-32 text-center">
-                <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-5 tracking-tight mt-10">
+                <h1 className="text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-linear-to-b from-gray-950 via-gray-800 to-gray-200 to-transparent mb-5 tracking-tight mt-10">
                     Build something Adorable
                 </h1>
                 <p className="text-2xl md:text-3xl text-gray-600 font-light mb-12">
