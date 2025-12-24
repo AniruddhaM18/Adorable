@@ -1,9 +1,9 @@
-export const BASE_TEMPLATE = {
+export const BASE_TEMPLATE:Record<string, string> = {
   // -------------------------
   // package.json
   // -------------------------
   "package.json": `{
-  "name": "react-sandbox",
+  "name": "adorable-app",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -18,13 +18,16 @@ export const BASE_TEMPLATE = {
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "tailwindcss": "^3.4.13",
+    "postcss": "^8.4.47",
+    "autoprefixer": "^10.4.20"
   }
 }
 `,
 
   // -------------------------
-  // vite.config.js
+  // vite.config.js  FIXED FOR e2b
   // -------------------------
   "vite.config.js": `
 import { defineConfig } from "vite";
@@ -37,16 +40,58 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    allowedHosts: true,     // DEV SERVER
+    allowedHosts: true   // ALLOW ALL DEV HOSTS (e2b-safe)
   },
 
   preview: {
     host: true,
     port: 5173,
     strictPort: true,
-    allowedHosts: "all",     // REQUIRED FOR e2b
-  },
+    allowedHosts: "all"  // REQUIRED FOR e2b PREVIEW
+  }
 });
+`,
+
+  // -------------------------
+  // tailwind.config.js
+  // -------------------------
+  "tailwind.config.js": `
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  theme: {
+    extend: {
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: "hsl(var(--primary))",
+        primaryGlow: "hsl(var(--primary-glow))",
+        secondary: "hsl(var(--secondary))",
+        accent: "hsl(var(--accent))",
+        muted: "hsl(var(--muted))",
+        border: "hsl(var(--border))"
+      },
+      boxShadow: {
+        elegant: "var(--shadow-elegant)",
+        glow: "var(--shadow-glow)"
+      }
+    }
+  },
+  plugins: []
+};
+`,
+
+  // -------------------------
+  // postcss.config.js
+  // -------------------------
+  "postcss.config.js": `
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+};
 `,
 
   // -------------------------
@@ -57,7 +102,7 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>React Sandbox</title>
+    <title>Adorable</title>
   </head>
   <body>
     <div id="root"></div>
@@ -83,30 +128,53 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 `,
 
   // -------------------------
+  // src/index.css  (DESIGN SYSTEM)
+  // -------------------------
+  "src/index.css": `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   DESIGN TOKENS (HSL ONLY)
+   ========================= */
+:root {
+  --background: 220 20% 98%;
+  --foreground: 222 47% 11%;
+
+  --primary: 245 80% 60%;
+  --primary-glow: 245 90% 70%;
+  --secondary: 210 40% 96%;
+  --accent: 280 80% 65%;
+  --muted: 215 16% 47%;
+  --border: 214 32% 91%;
+
+  --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.35);
+  --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.45);
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}
+`,
+
+  // -------------------------
   // src/App.jsx
   // -------------------------
   "src/App.jsx": `
 export default function App() {
   return (
-    <div style={{ padding: 24 }}>
-      <h1>🚀 React Sandbox Ready</h1>
-      <p>Edit <code>src/App.jsx</code> and save.</p>
-    </div>
+    <main className="min-h-screen flex items-center justify-center">
+      <section className="rounded-2xl border border-border bg-secondary p-10 shadow-elegant">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Adorable is ready ✨
+        </h1>
+        <p className="mt-3 text-muted">
+          Build something beautiful.
+        </p>
+      </section>
+    </main>
   );
 }
-`,
-
-  // -------------------------
-  // src/index.css
-  // -------------------------
-  "src/index.css": `
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-`,
+`
 };
