@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Download Button */}
-            <button className="hidden md:block bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+            <button className="hidden md:block bg-black text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors ring-2 ring-inset ring-gray-700">
                 Download
             </button>
         </nav>
