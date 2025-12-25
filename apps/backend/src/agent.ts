@@ -1,131 +1,146 @@
 import { z } from "zod";
-import { createSandbox } from "./sandbox.js"; // Ensure this path is correct
+import "dotenv/config";
 import { tool } from "@langchain/core/tools";
 import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation, END } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { AIMessage, BaseMessage } from "@langchain/core/messages";
+import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js";
 import { getSystemPrompt } from "./prompt.js";
 
-
-//type
-type SandboxResult = {
-  previewUrl: string;
+// --- Types ---
+type AgentResult = {
   files: {
     path: string;
     content: string;
   }[];
 };
 
-
 // --- Define the Tool ---
 const fileSchema = z.object({
   path: z.string().describe("File path (e.g., src/components/Header.jsx)"),
-  content: z.string().describe("Full code content")
+  content: z.string().describe("Full code content"),
 });
 
 function normalizeFileContent(content: string): string {
   if (content.includes("\\n")) {
-    return content
-      .replace(/\\n/g, "\n")
-      .replace(/\\"/g, '"');
+    return content.replace(/\\n/g, "\n").replace(/\\"/g, '"');
   }
   return content;
 }
 
 const createTool = tool(
   async ({ files }) => {
-    console.log("Tool Invoked - Creating Sandbox...");
-    console.log("FILES RECEIVED BY TOOL:", JSON.stringify(files, null, 2));
+    console.log("🛠️ Tool Invoked - Generating Files...");
 
     const normalizedFiles = files.map((f: any) => ({
       path: f.path,
       content: normalizeFileContent(f.content),
     }));
 
-    console.log("NORMALIZED FILES:", JSON.stringify(normalizedFiles.map(f => ({ path: f.path, contentLength: f.content.length })), null, 2));
+    // --- SAFETY CHECK (Debugging only) ---
+    const createdPaths = new Set(normalizedFiles.map((f) => f.path));
+    
+    normalizedFiles.forEach((file) => {
+      const localImportRegex = /from\s+["']\.\/components\/([^"']+)["']/g;
+      const matches = file.content.matchAll(localImportRegex);
+      
+      for (const match of matches) {
+        const componentName = match[1];
+        const expectedPath = `src/components/${componentName}.jsx`;
+        
+        if (!createdPaths.has(expectedPath) && !createdPaths.has(`src/components/${componentName}.js`)) {
+          console.warn(`⚠️ WARNING: File ${file.path} imports '${componentName}' but '${expectedPath}' was not generated!`);
+        }
+      }
+    });
 
-    const result = await createSandbox(normalizedFiles);
+    console.log(`Generated ${normalizedFiles.length} files.`);
 
     return {
-      previewUrl: result.url,
       files: normalizedFiles,
     };
   },
   {
     name: "create_app",
+    description: "Generate or modify project files. ALWAYS call this tool to output code.",
     schema: z.object({
       files: z.array(fileSchema),
     }),
   }
 );
 
-
-// --- Initialize LLM (OpenRouter) ---
+// --- Initialize LLM ---
 const llm = new ChatOpenAI({
-  model: "openai/gpt-4o-mini", // Vendor prefix is important for OpenRouter
+  model: "openai/gpt-4o-mini",
   apiKey: OPENROUTER_API_KEY,
   temperature: 0,
   configuration: {
     baseURL: "https://openrouter.ai/api/v1",
-  }
-}).bindTools([createTool]);
+    defaultHeaders: {
+      "HTTP-Referer": "http://localhost:3000",
+      "X-Title": "Adorable",
+    },
+  },
+});
 
-// --- The Agent Node (With Fix) ---
+//better but 10 times more expensive - 
+// --- Initialize LLM ---
+// const llm = new ChatOpenAI({
+//   // Update the model string to Anthropic's latest Opus
+//   model: "anthropic/claude-4.5-opus", 
+//   apiKey: OPENROUTER_API_KEY,
+//   temperature: 0,
+//   configuration: {
+//     baseURL: "https://openrouter.ai/api/v1",
+//     defaultHeaders: {
+//       "HTTP-Referer": "http://localhost:3000",
+//       "X-Title": "Adorable",
+//     },
+//   },
+// });
+
+// Bind tools to the LLM
+const llmWithTools = llm.bindTools([createTool]);
+
+console.log("OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY?.slice(0, 6));
+
+// --- The Agent Node ---
 async function agentNode(state: typeof MessagesAnnotation.State) {
-  const response = await llm.invoke(state.messages);
-
-  // OpenRouter tool-call fix
-  if (
-    !response.tool_calls?.length &&
-    response.additional_kwargs.tool_calls?.length
-  ) {
-    response.tool_calls = response.additional_kwargs.tool_calls.map((tc: any) => ({
-      name: tc.function.name,
-      args: JSON.parse(tc.function.arguments),
-      id: tc.id,
-      type: "tool_call",
-    }));
-  }
-
-  // HARD FAIL if no tool call
-  if (!response.tool_calls || response.tool_calls.length === 0) {
-    throw new Error("LLM did not call create_app tool");
-  }
-
-  return { messages: [response] };
+  const response = await llmWithTools.invoke(state.messages);
+  return {
+    messages: [response],
+  };
 }
 
-// Conditional Logic
+// --- Conditional Logic ---
 function shouldContinue(state: typeof MessagesAnnotation.State) {
   const lastMessage = state.messages[state.messages.length - 1] as AIMessage;
-
-  // Check if the LLM wants to call a tool
   if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
     return "tools";
   }
   return "__end__";
 }
 
-// --- 5. Build the Graph ---
+// --- Build the Graph ---
 const toolNode = new ToolNode([createTool]);
 
 const workflow = new StateGraph(MessagesAnnotation)
   .addNode("agent", agentNode)
   .addNode("tools", toolNode)
   .addEdge("__start__", "agent")
-  .addConditionalEdges("agent", shouldContinue,
-    {
-      tools: "tools",
-      __end__: END
-    }
-  )
-  .addEdge("tools", END); // end here
+  .addConditionalEdges("agent", shouldContinue, {
+    tools: "tools",
+    __end__: END,
+  })
+  .addEdge("tools", END);
 
 export const appGraph = workflow.compile();
 
-export async function runUserRequest(userInput: string): Promise<SandboxResult> {
+// --- Main Execution Function (LangSmith Integrated) ---
+// ... (keep all imports and graph setup the same)
+
+export async function runUserRequest(userInput: string): Promise<AgentResult> {
   const systemPrompt = getSystemPrompt();
 
   const inputs = {
@@ -135,21 +150,76 @@ export async function runUserRequest(userInput: string): Promise<SandboxResult> 
     ],
   };
 
-  const finalState = await appGraph.invoke(inputs);
+  const finalState = await appGraph.invoke(inputs, {
+    recursionLimit: 50,
+  });
 
-  const lastMessage = finalState.messages[finalState.messages.length - 1];
+  // 1. Merge files from ALL tool calls
+  const mergedFilesMap = new Map<string, { path: string; content: string }>();
 
-  if (!lastMessage) {
-    throw new Error("No final message found");
-  }
-
-  if (typeof lastMessage.content === "string") {
-    // If it's not JSON, return a clean error
-    try {
-      return JSON.parse(lastMessage.content);
-    } catch {
-      throw new Error(lastMessage.content);
+  for (const msg of finalState.messages) {
+    if (msg instanceof ToolMessage) {
+      try {
+        const result = JSON.parse(msg.content as string);
+        if (result.files && Array.isArray(result.files)) {
+          for (const file of result.files) {
+            mergedFilesMap.set(file.path, file);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse a ToolMessage:", err);
+      }
     }
   }
-  return lastMessage.content as unknown as SandboxResult;
+
+  const allFiles = Array.from(mergedFilesMap.values());
+
+  // 2. Validate output
+  if (allFiles.length === 0) {
+    const lastMessage = finalState.messages[finalState.messages.length - 1];
+    if (lastMessage instanceof AIMessage) {
+      throw new Error(`Agent failed to generate code. Response: ${lastMessage.content}`);
+    }
+    throw new Error("Tool executed but generated 0 files.");
+  }
+
+  // THE SAFETY NET (AUTO-WIRING)
+  
+  const hasAppJsx = allFiles.some(f => f.path === "src/App.jsx");
+  
+  // Find the likely "Main Component" created by the agent
+  // We look for the first file in src/components/
+  const mainComponent = allFiles.find(f => f.path.startsWith("src/components/"));
+
+  // IF: The agent created a component
+  // AND: The agent FORGOT to update App.jsx
+  // THEN: We automatically generate App.jsx for them.
+  if (!hasAppJsx && mainComponent) {
+    console.log("Agent forgot to wire App.jsx. Applying Auto-Wiring fix...");
+
+    // Extract name example :  "src/components/FlappyBird.jsx" -> "FlappyBird"
+    const componentName = mainComponent.path.split("/").pop()?.replace(/\.\w+$/, "");
+
+    if (componentName) {
+      const autoAppContent = `
+import React from "react";
+import ${componentName} from "./components/${componentName}";
+
+export default function App() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <${componentName} />
+    </div>
+  );
+}
+`;
+      
+      allFiles.push({
+        path: "src/App.jsx",
+        content: autoAppContent
+      });
+    }
+  }
+
+  return { files: allFiles };
 }
