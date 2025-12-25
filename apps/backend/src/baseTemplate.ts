@@ -1,6 +1,6 @@
-export const BASE_TEMPLATE:Record<string, string> = {
+export const BASE_TEMPLATE: Record<string, string> = {
   // -------------------------
-  // package.json
+  // package.json (UPDATED WITH DEPENDENCIES)
   // -------------------------
   "package.json": `{
   "name": "adorable-app",
@@ -14,7 +14,10 @@ export const BASE_TEMPLATE:Record<string, string> = {
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.460.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
@@ -27,7 +30,7 @@ export const BASE_TEMPLATE:Record<string, string> = {
 `,
 
   // -------------------------
-  // vite.config.js  FIXED FOR e2b
+  // vite.config.js
   // -------------------------
   "vite.config.js": `
 import { defineConfig } from "vite";
@@ -40,14 +43,14 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    allowedHosts: true   // ALLOW ALL DEV HOSTS (e2b-safe)
+    allowedHosts: true
   },
 
   preview: {
     host: true,
     port: 5173,
     strictPort: true,
-    allowedHosts: "all"  // REQUIRED FOR e2b PREVIEW
+    allowedHosts: "all"
   }
 });
 `,
@@ -128,7 +131,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 `,
 
   // -------------------------
-  // src/index.css  (DESIGN SYSTEM)
+  // src/index.css
   // -------------------------
   "src/index.css": `
 @tailwind base;
