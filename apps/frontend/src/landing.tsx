@@ -6,7 +6,6 @@ import { BackgroundRippleEffect } from './components/ui/background-ripple-effect
 const Landing = () => {
     const [isVisible, setIsVisible] = useState(false);
     const sectionRef = useRef<HTMLElement>(null);
-
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
