@@ -17,7 +17,9 @@ jobs:
         uses : actions/setup-node@v4
         with : 
           node-version: 20
-          cache : pnpm
+
+      - name : Install pnpm
+        run : npm i -g pnpm
       
       - name : Install dependancies
         run : pnpm install --frozen-lockfile
