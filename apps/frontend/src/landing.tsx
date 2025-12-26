@@ -329,7 +329,7 @@ const Landing = () => {
                     </div>
 
                     <div className="border-t border-gray-800 mt-12 pt-8 text-gray-400 text-sm">
-                        © 2024 Antigravity. All rights reserved.
+                        © 2025 Adorable. All rights reserved.
                     </div>
                 </div>
             </footer>
