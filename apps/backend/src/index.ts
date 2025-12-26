@@ -9,7 +9,6 @@ app.use(express.json());
 
 app.use("/api/project", projectRouter);
 
-
 app.post("/api/generate", async (req, res) => {
   try {
     const { prompt } = req.body;

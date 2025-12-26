@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Navbar from './components/Navbar';
 import { InputBox } from './components/InputBox';
 import { BackgroundRippleEffect } from './components/ui/background-ripple-effect';
