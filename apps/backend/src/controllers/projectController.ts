@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma, Prisma } from "@repo/database";
 import { Request, Response } from "express";
 import { runUserRequest } from "../agent.js";
 import { assembleProject } from "../projectAssembler.js";
@@ -28,7 +28,7 @@ export async function createProject(req: Request, res: Response) {
         const projectFiles = await assembleProject(result.files);
 
         //db transaction
-        const { project, version } = await prisma.$transaction(async (tx) => {
+        const { project, version } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             //create project
             const project = await tx.project.create({
                 data: {
