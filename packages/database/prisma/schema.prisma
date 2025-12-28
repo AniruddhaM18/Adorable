@@ -12,30 +12,34 @@ generator client {
 }
 
 model User {
-  id String @id @unique @default(cuid())
-  username String
-  password String
+  id        String @id @unique @default(cuid())
+  email     String @unique
+  password  String
   createdAt DateTime @default(now())
-  projects Project[]
+  projects  Project[]
 }
 
 model Project {
-  id String @id @unique @default(cuid())
-  title String
-  prompt String
-  userId String
-  user User @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String @id @default(cuid())
+  userId           String
+  user             User @relation(fields: [userId], references: [id])
+  name             String
+  currentVersionId String
+  previewUrl       String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  version          Version[]
 }
 
-// model File {
-//   id
-//   path 
-//   content
-//   project id 
 
-// }
+model Version {
+  id           String @id @default(cuid())
+  projectId    String
+  project      Project @relation(fields: [projectId], references: [id])
+  files        Json   // All code is here
+  prompt       String
+  createdAt    DateTime @default(now())
+}
 
 //unique path per project
 
