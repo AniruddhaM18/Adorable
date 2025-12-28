@@ -4,19 +4,19 @@
   "private": true,
   "type": "module",
 
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/client.ts",
+  "types": "./src/client.ts",
 
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./src/client.ts",
+      "types": "./src/client.ts"
     }
   },
 
   "scripts": {
     "generate": "prisma generate",
-    "build": "tsc -b",
+    "build": "prisma generate && tsc -b",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push",
