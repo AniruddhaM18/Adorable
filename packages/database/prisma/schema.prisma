@@ -26,6 +26,7 @@ model Project {
   name             String
   currentVersionId String
   previewUrl       String
+  staus            ProjectStatus @default(creating)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   version          Version[]
@@ -39,6 +40,12 @@ model Version {
   files        Json   // All code is here
   prompt       String
   createdAt    DateTime @default(now())
+}
+
+enum ProjectStatus {
+  creating
+  ready
+  failed
 }
 
 //unique path per project

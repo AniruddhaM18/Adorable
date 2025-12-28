@@ -14,6 +14,7 @@ type AgentResult = {
     path: string;
     content: string;
   }[];
+  projectName?: string;
 };
 
 // define the tool
@@ -154,13 +155,18 @@ export async function runUserRequest(userInput: string): Promise<AgentResult> {
     recursionLimit: 50,
   });
 
-  // Merge files from ALL tool calls
   const mergedFilesMap = new Map<string, { path: string; content: string }>();
+  let projectName: string | undefined;
 
   for (const msg of finalState.messages) {
     if (msg instanceof ToolMessage) {
       try {
         const result = JSON.parse(msg.content as string);
+
+        if (result.projectName && typeof result.projectName === "string") {
+          projectName = result.projectName;
+        }
+
         if (result.files && Array.isArray(result.files)) {
           for (const file of result.files) {
             mergedFilesMap.set(file.path, file);
@@ -174,52 +180,59 @@ export async function runUserRequest(userInput: string): Promise<AgentResult> {
 
   const allFiles = Array.from(mergedFilesMap.values());
 
-  // Validate output
   if (allFiles.length === 0) {
-    const lastMessage = finalState.messages[finalState.messages.length - 1];
+    const lastMessage = finalState.messages.at(-1);
     if (lastMessage instanceof AIMessage) {
       throw new Error(`Agent failed to generate code. Response: ${lastMessage.content}`);
     }
     throw new Error("Tool executed but generated 0 files.");
   }
 
-  // THE SAFETY NET (AUTO-WIRING)
-
   const hasAppJsx = allFiles.some(f => f.path === "src/App.jsx");
-
-  // Find the likely "Main Component" created by the agent
-  // We look for the first file in src/components/
   const mainComponent = allFiles.find(f => f.path.startsWith("src/components/"));
 
-  // IF: The agent created a component
-  // AND: The agent FORGOT to update App.jsx
-  // THEN: We automatically generate App.jsx for them.
   if (!hasAppJsx && mainComponent) {
     console.log("Agent forgot to wire App.jsx. Applying Auto-Wiring fix...");
 
-    // Extract name example :  "src/components/FlappyBird.jsx" -> "FlappyBird"
-    const componentName = mainComponent.path.split("/").pop()?.replace(/\.\w+$/, "");
+    const componentName = mainComponent.path
+      .split("/")
+      .pop()
+      ?.replace(/\.\w+$/, "");
 
     if (componentName) {
       const autoAppContent = `
-         import React from "react";
-         import ${componentName} from "./components/${componentName}";
+import React from "react";
+import ${componentName} from "./components/${componentName}";
 
-         export default function App() {
-          return (
-          <div className="min-h-screen bg-background text-foreground">
-          <${componentName} />
-          </div>
-          );
-          }
-         `;
+export default function App() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <${componentName} />
+    </div>
+  );
+}
+      `;
 
       allFiles.push({
         path: "src/App.jsx",
-        content: autoAppContent
+        content: autoAppContent,
       });
     }
   }
 
-  return { files: allFiles };
+  // ALWAYS infer name after files are finalized
+  if (!projectName && mainComponent) {
+    projectName = mainComponent.path
+      .split("/")
+      .pop()
+      ?.replace(/\.\w+$/, "")
+      ?.replace(/([a-z])([A-Z])/g, "$1 $2");
+  }
+
+  projectName ??= "Untitled Project";
+
+  return {
+    files: allFiles,
+    projectName,
+  };
 }

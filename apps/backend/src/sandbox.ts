@@ -70,4 +70,4 @@ export async function createSandbox(project: ProjectFiles) {
     sandboxId: sbx.sandboxId,
     url,
   };
-}
+};

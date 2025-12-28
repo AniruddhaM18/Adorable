@@ -4,7 +4,6 @@ import bcrypt from "bcrypt";
 import { signinSchema, signupSchema } from "../schema.js";
 import { prisma } from "@repo/database";
 import { JWT_SECRET } from "../config.js";
-import { tr } from "zod/locales";
 
 
 //signup controller
