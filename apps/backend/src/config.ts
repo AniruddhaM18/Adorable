@@ -5,3 +5,5 @@ if (!OPENROUTER_API_KEY) {
 }
 export const E2B_API_KEY = process.env.E2B_API_KEY;
 
+export const JWT_SECRET = process.env.JWT_SECRET;
+
