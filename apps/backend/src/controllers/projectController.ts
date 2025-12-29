@@ -58,15 +58,20 @@ export async function createProject(req: Request, res: Response) {
         await prisma.project.update({
             where:{
                 id: project.id
-            },
+            },   
             data: {
                 name: result.projectName ?? project.name,
                 previewUrl: sandbox.url,
-                currentVersionId: sandbox.url,
+                currentVersionId: version.id,
                 staus: "ready"
             }
         });
-    }catch(err){
+        return res.status(201).json({
+            success: true,
+            projectId : project.id,
+            previewUrl : sandbox.url
+        })
+       }catch(err){
         console.log(err);
         res.status(500).json({
             success: false,
