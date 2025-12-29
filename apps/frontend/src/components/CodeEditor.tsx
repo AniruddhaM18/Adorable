@@ -2,11 +2,11 @@ import Editor from "@monaco-editor/react";
 
 export default function CodeEditor() {
   return (
-    <div style={{ marginLeft: "240px", height: "100vh" }}>
+    <div className="h-full w-full overflow-hidden border border-zinc-700 rounded-md">
       <Editor
         height="100%"
         defaultLanguage="javascript"
-        defaultValue={`// Start typing\nconsole.log("Hello Monaco");`}
+        defaultValue={`// Start typing\nconsole.log("Hello Ani");`}
         theme="vs-dark"
         options={{
           fontSize: 14,

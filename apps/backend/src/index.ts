@@ -1,18 +1,20 @@
 import express from "express";
 import projectRouter from "./routes/projectRouter.js";
 import authRouter from "./routes/authRouter.js";
-import { prisma } from "@repo/database";
+import cookieParser from "cookie-parser";
 
-prisma.user.findMany().then(users => {
-    console.log("Users:", users);
-})
 
 const app = express();
+app.use(cookieParser());     
 app.use(express.json());
 
-// app.use("/project", projectRouter);
+app.use("/project", projectRouter);
 
-// app.use("/auth", authRouter);
+app.use("/auth", authRouter);
+
+app.post("/amrit", async(req, res) => {
+
+});
 
 app.listen(3000, () => {
     console.log("Server running @:3000")
