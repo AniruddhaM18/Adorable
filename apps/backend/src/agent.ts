@@ -43,7 +43,7 @@ const createTool = tool(
     const createdPaths = new Set(normalizedFiles.map((f) => f.path));
 
     normalizedFiles.forEach((file) => {
-      const localImportRegex = /from\s+["']\.\/components\/([^"']+)["']/g;
+      const localImportRegex = /from\s+["']\.\/components\/([^"']+)["']/;
       const matches = file.content.matchAll(localImportRegex);
 
       for (const match of matches) {
@@ -85,8 +85,8 @@ const llm = new ChatOpenAI({
   },
 });
 
-//better but 10 times more expensive - 
-// llm init
+// // better but 10 times more expensive - 
+// // llm init
 // const llm = new ChatOpenAI({
 //   // Update the model string to Anthropic's latest Opus
 //   model: "anthropic/claude-4.5-opus", 
