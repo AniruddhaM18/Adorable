@@ -1,5 +1,5 @@
 "use client";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import React, { useMemo, useRef, useState } from "react";
 
 export const BackgroundRippleEffect = ({
@@ -23,12 +23,15 @@ export const BackgroundRippleEffect = ({
       ref={ref}
       className={cn(
         "absolute inset-0 h-full w-full -translate-x-[10px]",
-        "[--cell-border-color:var(--color-slate-400)] [--cell-fill-color:var(--color-slate-100)] [--cell-shadow-color:var(--color-neutral-500)]",
-        "dark:[--cell-border-color:var(--color-slate-700)] dark:[--cell-fill-color:var(--color-neutral-900)] dark:[--cell-shadow-color:var(--color-neutral-800)]"
+        // neutral dark palette
+        "[--cell-border-color:rgb(55,65,81)]",     // slate-700
+        "[--cell-fill-color:rgb(10,12,16)]",       // graphite black
+        "[--cell-hover-fill:rgb(17,24,39)]",       // slate-900
+        "[--cell-glow:rgba(255,255,255,0.12)]"     // neutral glow
       )}
     >
       <div className="relative h-auto w-auto overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-hidden" />
+        <div className="pointer-events-none absolute inset-0 z-[2]" />
 
         <DivGrid
           key={`base-${rippleKey}`}
@@ -74,8 +77,8 @@ const DivGrid = ({
   rows = 10,
   cols = 30,
   cellSize = 56,
-  borderColor = "#3f3f46",
-  fillColor = "rgba(14,165,233,0.3)",
+  borderColor,
+  fillColor,
   clickedCell = null,
   onCellClick = () => {},
   interactive = true,
@@ -102,8 +105,7 @@ const DivGrid = ({
         const rowIdx = Math.floor(idx / cols);
         const colIdx = idx % cols;
 
-        // 🎯 Original row roles (UNCHANGED)
-        const isPrimaryRow = rowIdx === 8; // 9th row
+        const isPrimaryRow = rowIdx === 8;
         const isSecondaryRow = rowIdx === 6 || rowIdx === 7;
         const isTertiaryRow = rowIdx === 5;
         const isFadedRow = rowIdx === 2 || rowIdx === 3;
@@ -125,7 +127,6 @@ const DivGrid = ({
           ? 0.25
           : 0.4;
 
-        // 🔻 Bottom fade (ONLY extra rows)
         if (rowIdx >= rows) {
           const fadeProgress = (rowIdx - rows + 1) / (EXTRA_FADE_ROWS + 1);
           opacity = opacity * (1 - fadeProgress);
@@ -146,10 +147,13 @@ const DivGrid = ({
             key={idx}
             className={cn(
               "cell relative border-[0.5px]",
-              "transition-[opacity,background-color] duration-200 ease-out will-change-transform",
-              "hover:bg-slate-300/60 dark:hover:bg-neutral-800/60 hover:opacity-100",
-              "dark:shadow-[0px_0px_40px_1px_var(--cell-shadow-color)_inset]",
-              clickedCell && "animate-cell-ripple [animation-fill-mode:none]",
+              "transition-[opacity,background-color,box-shadow] duration-200 ease-out",
+              interactive &&
+                "hover:bg-[var(--cell-hover-fill)] hover:opacity-100",
+              interactive &&
+                "hover:shadow-[inset_0_0_30px_var(--cell-glow),0_0_18px_-6px_var(--cell-glow)]",
+              clickedCell &&
+                "animate-cell-ripple [animation-fill-mode:none]",
               !interactive && "pointer-events-none"
             )}
             style={style}
