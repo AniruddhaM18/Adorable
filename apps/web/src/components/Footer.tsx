@@ -52,7 +52,7 @@ export default function Footer() {
         </div>
 
         <div className="flex justify-center items-center pt-32 pb-18">
-          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent bg-clip-text bg-linear-to-b from-neutral-50 via-neutral-200 to-neutral-800 ">
+          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent bg-clip-text bg-linear-to-b from-neutral-400 via-neutral-600 to-neutral-950 ">
             Adorable
           </h1>
         </div>

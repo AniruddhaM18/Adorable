@@ -5,7 +5,7 @@ export function Navbar() {
     return (
         <nav className="relative z-10 flex items-center justify-between px-8 py-4 max-w-7xl mx-auto ">
             <div className="flex items-center gap-12">
-                {/* Logo */}
+
                 <div className="flex items-center gap-2">
                     <div className="w-12 h-12 rounded-md mr-2 flex items-center justify-center
                               drop-shadow-[0_0_6px_rgba(255,255,255,0.10)]">
@@ -14,7 +14,6 @@ export function Navbar() {
                     <span className="text-xl font-semibold text-gray-200">Adorable</span>
                 </div>
 
-                {/* Nav Links */}
                 <div className="hidden md:flex items-center gap-8">
                     <a href="#product" className="text-gray-300 hover:text-gray-900 text-sm font-medium transition-colors">
                         Product

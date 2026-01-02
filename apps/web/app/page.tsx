@@ -32,7 +32,6 @@ export default function Home() {
     return (
         <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
             
-            {/* Navigation */}
             <Navbar />
 
             {/* Background Ripple Effect (below navbar) */}
@@ -60,18 +59,15 @@ export default function Home() {
             {/* Feature Section 1 - AI IDE Core */}
             <section
                 ref={sectionRef}
-                className={`relative z-10 max-w-[90rem] mx-auto px-8 py-24 mt-32 transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                    }`}
-            >
-                <div className="bg-gradient-to-br from-gray-900 to-blue-950/30 rounded-[3rem] p-12 md:p-16 shadow-sm">
+                className={`relative z-10 max-w-[90rem] mx-auto px-8 py-8 mt-16 transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                <div className="bg-gradient-to-br from-neutral-800 to-neutral-600/50 rounded-[3rem] p-12 md:p-16 shadow-md">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div>
                             <h2 className="text-5xl font-bold text-gray-100 mb-6">
-                                AI IDE Core
+                                Make anything
                             </h2>
                             <p className="text-xl text-gray-400 leading-relaxed mb-8">
-                                Experience the power of AI-assisted development with intelligent code completion,
-                                real-time suggestions, and seamless integration with your workflow.
+                                AI landing page builder that creates stunning designs in seconds.
                             </p>
                             <ul className="space-y-4">
                                 <li className="flex items-start gap-3">
@@ -98,6 +94,14 @@ export default function Home() {
                                     </div>
                                     <span className="text-gray-300 text-lg">Seamless workflow integration</span>
                                 </li>
+                                <li className="flex items-start gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-gray-300 text-lg">Seamless workflow integration</span>
+                                </li>
                             </ul>
                         </div>
 
@@ -108,7 +112,7 @@ export default function Home() {
 
             {/* Feature Section 2 - Collaboration */}
             <section className="relative z-10 max-w-7xl mx-auto px-8 py-24">
-                <div className="bg-gradient-to-br from-purple-950/30 to-pink-950/30 rounded-[3rem] p-12 md:p-16 shadow-sm">
+                <div className="bg-gradient-to-br from-neutral-800/70 to-neutral-800/40 rounded-[3rem] p-12 md:p-16 shadow-md">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         {/* Mockup on left */}
                         <div className="bg-gray-900 rounded-2xl p-6 shadow-2xl order-2 md:order-1">
@@ -120,7 +124,7 @@ export default function Home() {
                             <div className="space-y-4">
                                 <div className="bg-gray-800 rounded-lg p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex-shrink-0" />
+                                        <div className="w-8 h-8 rounded-full bg-blue-400 flex-shrink-0" />
                                         <div className="flex-1">
                                             <div className="text-gray-300 text-sm mb-2">How can I optimize this function?</div>
                                             <div className="bg-gray-700 rounded-lg p-3 text-xs text-gray-400 font-mono">
@@ -156,7 +160,7 @@ export default function Home() {
                             </p>
                             <ul className="space-y-4">
                                 <li className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
@@ -164,7 +168,7 @@ export default function Home() {
                                     <span className="text-gray-300 text-lg">Context-aware responses</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
@@ -172,7 +176,7 @@ export default function Home() {
                                     <span className="text-gray-300 text-lg">Code explanations</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
