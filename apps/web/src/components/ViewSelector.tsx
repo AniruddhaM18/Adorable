@@ -1,11 +1,29 @@
 "use client";
-import { FaCode } from "react-icons/fa";
 
+import { useEffect, useState } from "react";
+import { FaCode } from "react-icons/fa";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CodeSandbox } from "./CodeSandbox";
 import { Viewport } from "./ViewPort";
+import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
+const backendUrl = NEXT_PUBLIC_BACKEND_URL;
 
-export function ViewSelector() {
+
+export function ViewSelector({ projectId }: { projectId: string }) {
+  const [files, setFiles] = useState<any>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+
+  useEffect(() => {
+    fetch(`${backendUrl}/project/${projectId}`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setFiles(data.project.currentVersion.files);
+        setPreviewUrl(data.project.previewUrl);
+      });
+  }, [projectId]);
+
   return (
     <div className="h-screen bg-neutral-900 pl-[404px] pt-2 pr-2 pb-1">
       <Tabs defaultValue="code" className="flex h-full flex-col w-full">
@@ -19,11 +37,11 @@ export function ViewSelector() {
 
         <div className="flex-1 border border-slate-600 rounded-md overflow-hidden mt-2">
           <TabsContent value="code" className="h-full">
-            <CodeSandbox />
+            <CodeSandbox files={files} />
           </TabsContent>
 
           <TabsContent value="preview" className="h-full">
-            <Viewport url="http://anflow.aniruddha.xyz/" />
+            <Viewport url={previewUrl} />
           </TabsContent>
 
           <TabsContent

@@ -1,9 +1,6 @@
-
-//{ url } : { url : string } pass in as params in fn
-export function Viewport({ url } : { url : string }){
-     const TEST_URL = "http://anflow.aniruddha.xyz/";
-    return(
-       <div className="h-full w-full bg-slate-900 overflow-hidden">
+export function Viewport({ url }: { url: string }) {
+  return (
+    <div className="h-full w-full bg-slate-900 overflow-hidden">
       <iframe
         src={url}
         className="h-full w-full border-0"
@@ -11,6 +8,5 @@ export function Viewport({ url } : { url : string }){
         sandbox="allow-scripts allow-same-origin allow-forms"
       />
     </div>
-    )
+  );
 }
-
