@@ -8,53 +8,67 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js";
 import { getSystemPrompt } from "./prompt.js";
 
-// types
-type AgentResult = {
-  files: {
-    path: string;
-    content: string;
-  }[];
-  projectName?: string;
+/* =========================
+   Types
+========================= */
+
+type GeneratedFile = {
+  path: string;
+  content: string;
 };
 
-// define the tool
-const fileSchema = z.object({
-  path: z.string().describe("File path (e.g., src/components/Header.jsx)"),
-  content: z.string().describe("Full code content"),
-});
+type AgentResult =
+  | {
+      success: true;
+      files: GeneratedFile[];
+      projectName: string;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+/* =========================
+   Utils
+========================= */
 
 function normalizeFileContent(content: string): string {
+  if (typeof content !== "string") return "";
   if (content.includes("\\n")) {
     return content.replace(/\\n/g, "\n").replace(/\\"/g, '"');
   }
   return content;
 }
 
+function safeJsonParse(value: string) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+/* =========================
+   Tool Definition
+========================= */
+
+const fileSchema = z.object({
+  path: z.string(),
+  content: z.string(),
+});
+
 const createTool = tool(
   async ({ files }) => {
     console.log("🛠️ Tool Invoked - Generating Files...");
+
+    if (!Array.isArray(files)) {
+      return { files: [] };
+    }
 
     const normalizedFiles = files.map((f: any) => ({
       path: f.path,
       content: normalizeFileContent(f.content),
     }));
-
-    // --- SAFETY CHECK (Debugging only) ---
-    const createdPaths = new Set(normalizedFiles.map((f) => f.path));
-
-    normalizedFiles.forEach((file) => {
-      const localImportRegex = /from\s+["']\.\/components\/([^"']+)["']/;
-      const matches = file.content.matchAll(localImportRegex);
-
-      for (const match of matches) {
-        const componentName = match[1];
-        const expectedPath = `src/components/${componentName}.jsx`;
-
-        if (!createdPaths.has(expectedPath) && !createdPaths.has(`src/components/${componentName}.js`)) {
-          console.warn(`⚠️ WARNING: File ${file.path} imports '${componentName}' but '${expectedPath}' was not generated!`);
-        }
-      }
-    });
 
     console.log(`Generated ${normalizedFiles.length} files.`);
 
@@ -71,7 +85,10 @@ const createTool = tool(
   }
 );
 
-//llm init
+/* =========================
+   LLM Setup
+========================= */
+
 const llm = new ChatOpenAI({
   model: "openai/gpt-4o-mini",
   apiKey: OPENROUTER_API_KEY,
@@ -85,45 +102,22 @@ const llm = new ChatOpenAI({
   },
 });
 
-// // better but 10 times more expensive - 
-// // llm init
-// const llm = new ChatOpenAI({
-//   // Update the model string to Anthropic's latest Opus
-//   model: "anthropic/claude-4.5-opus", 
-//   apiKey: OPENROUTER_API_KEY,
-//   temperature: 0,
-//   configuration: {
-//     baseURL: "https://openrouter.ai/api/v1",
-//     defaultHeaders: {
-//       "HTTP-Referer": "http://localhost:3000",
-//       "X-Title": "Adorable",
-//     },
-//   },
-// });
-
-// Bind tools to the LLM
 const llmWithTools = llm.bindTools([createTool]);
 
-console.log("OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY?.slice(0, 6));
+/* =========================
+   Agent Graph
+========================= */
 
-// agent nodee
 async function agentNode(state: typeof MessagesAnnotation.State) {
   const response = await llmWithTools.invoke(state.messages);
-  return {
-    messages: [response],
-  };
+  return { messages: [response] };
 }
 
-// conditional logic
 function shouldContinue(state: typeof MessagesAnnotation.State) {
-  const lastMessage = state.messages[state.messages.length - 1] as AIMessage;
-  if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
-    return "tools";
-  }
-  return "__end__";
+  const last = state.messages[state.messages.length - 1] as AIMessage;
+  return last.tool_calls?.length ? "tools" : "__end__";
 }
 
-//  Build the Graph
 const toolNode = new ToolNode([createTool]);
 
 const workflow = new StateGraph(MessagesAnnotation)
@@ -138,10 +132,13 @@ const workflow = new StateGraph(MessagesAnnotation)
 
 export const appGraph = workflow.compile();
 
-//  Main Execution Function (LangSmith Integrated)
-// ... (keep all imports and graph setup the same)
+/* =========================
+   Main Executor
+========================= */
 
-export async function runUserRequest(userInput: string): Promise<AgentResult> {
+export async function runUserRequest(
+  userInput: string
+): Promise<AgentResult> {
   const systemPrompt = getSystemPrompt();
 
   const inputs = {
@@ -155,52 +152,68 @@ export async function runUserRequest(userInput: string): Promise<AgentResult> {
     recursionLimit: 50,
   });
 
-  const mergedFilesMap = new Map<string, { path: string; content: string }>();
+  const mergedFiles = new Map<string, GeneratedFile>();
   let projectName: string | undefined;
 
   for (const msg of finalState.messages) {
-    if (msg instanceof ToolMessage) {
-      try {
-        const result = JSON.parse(msg.content as string);
+    if (!(msg instanceof ToolMessage)) continue;
 
-        if (result.projectName && typeof result.projectName === "string") {
-          projectName = result.projectName;
-        }
+    const content =
+      typeof msg.content === "string"
+        ? safeJsonParse(msg.content) ?? msg.content
+        : msg.content;
 
-        if (result.files && Array.isArray(result.files)) {
-          for (const file of result.files) {
-            mergedFilesMap.set(file.path, file);
-          }
+    if (!content || typeof content !== "object") continue;
+
+    if (Array.isArray((content as any).files)) {
+      for (const file of (content as any).files) {
+        if (file?.path && file?.content) {
+          mergedFiles.set(file.path, file);
         }
-      } catch (err) {
-        console.error("Failed to parse a ToolMessage:", err);
       }
     }
+
+    if (typeof (content as any).projectName === "string") {
+      projectName = (content as any).projectName;
+    }
   }
 
-  const allFiles = Array.from(mergedFilesMap.values());
+  const allFiles = Array.from(mergedFiles.values());
+
+  /* =========================
+     Graceful Failure (NO THROW)
+  ========================= */
 
   if (allFiles.length === 0) {
-    const lastMessage = finalState.messages.at(-1);
-    if (lastMessage instanceof AIMessage) {
-      throw new Error(`Agent failed to generate code. Response: ${lastMessage.content}`);
-    }
-    throw new Error("Tool executed but generated 0 files.");
+    const last = finalState.messages.at(-1);
+    return {
+      success: false,
+      error:
+        last instanceof AIMessage
+          ? String(last.content)
+          : "Agent failed to generate files.",
+    };
   }
 
-  const hasAppJsx = allFiles.some(f => f.path === "src/App.jsx");
-  const mainComponent = allFiles.find(f => f.path.startsWith("src/components/"));
+  /* =========================
+     Auto-wire App.jsx if missing
+  ========================= */
 
-  if (!hasAppJsx && mainComponent) {
-    console.log("Agent forgot to wire App.jsx. Applying Auto-Wiring fix...");
+  const hasApp = allFiles.some((f) => f.path === "src/App.jsx");
+  const mainComponent = allFiles.find((f) =>
+    f.path.startsWith("src/components/")
+  );
 
+  if (!hasApp && mainComponent) {
     const componentName = mainComponent.path
       .split("/")
       .pop()
       ?.replace(/\.\w+$/, "");
 
     if (componentName) {
-      const autoAppContent = `
+      allFiles.push({
+        path: "src/App.jsx",
+        content: `
 import React from "react";
 import ${componentName} from "./components/${componentName}";
 
@@ -211,28 +224,23 @@ export default function App() {
     </div>
   );
 }
-      `;
-
-      allFiles.push({
-        path: "src/App.jsx",
-        content: autoAppContent,
+        `.trim(),
       });
     }
   }
 
-  // ALWAYS infer name after files are finalized
   if (!projectName && mainComponent) {
-    projectName = mainComponent.path
-      .split("/")
-      .pop()
-      ?.replace(/\.\w+$/, "")
-      ?.replace(/([a-z])([A-Z])/g, "$1 $2");
+    projectName =
+      mainComponent.path
+        .split("/")
+        .pop()
+        ?.replace(/\.\w+$/, "")
+        ?.replace(/([a-z])([A-Z])/g, "$1 $2") ?? "Untitled Project";
   }
 
-  projectName ??= "Untitled Project";
-
   return {
+    success: true,
     files: allFiles,
-    projectName,
+    projectName: projectName ?? "Untitled Project",
   };
 }

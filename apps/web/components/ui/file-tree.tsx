@@ -1,72 +1,75 @@
-"use client"
+"use client";
+
 import {
   ControlledTreeEnvironment,
   Tree,
   TreeItem,
   TreeItemIndex,
-} from "react-complex-tree"
-import { useMemo, useState } from "react"
+} from "react-complex-tree";
+import { useMemo, useState } from "react";
 import {
   FaChevronDown,
   FaChevronRight,
   FaFolder,
   FaFolderOpen,
   FaFileCode,
-} from "react-icons/fa"
+} from "react-icons/fa";
 
-//types
+// =====================
+// Types
+// =====================
 export type FileTreeNode = {
-  id: string
-  name: string
-  type: "file" | "folder"
-  children?: FileTreeNode[]
-}
-
+  id: string;
+  name: string;
+  type: "file" | "folder";
+  children?: FileTreeNode[];
+};
 
 type FileTreeProps = {
-  data: FileTreeNode[]
-  onFileSelect?: (id: string) => void
-}
+  data: FileTreeNode[];
+  onFileSelect?: (id: string) => void;
+};
 
-//components
+// =====================
+// Component
+// =====================
 export function FileTree({ data, onFileSelect }: FileTreeProps) {
-
-  //normalize data 
+  // Normalize data → react-complex-tree format
   const items = useMemo<Record<TreeItemIndex, TreeItem>>(() => {
     const map: Record<TreeItemIndex, TreeItem> = {
       root: {
         index: "root",
         isFolder: true,
-        children: [],
+        children: data.map((node) => node.id), // Only add top-level items here
         data: "root",
       },
-    }
+    };
 
-    const walk = (nodes: FileTreeNode[], parent: TreeItemIndex) => {
+    const walk = (nodes: FileTreeNode[]) => {
       for (const node of nodes) {
+        // Add this node to the map
         map[node.id] = {
           index: node.id,
-          isFolder: !!node.children,
+          isFolder: node.type === "folder",
           children: node.children?.map((c) => c.id) ?? [],
           data: node.name,
-        }
+        };
 
-        ;(map[parent].children as TreeItemIndex[]).push(node.id)
-
-        if (node.children) {
-          walk(node.children, node.id)
+        // Recursively process children
+        if (node.children && node.children.length > 0) {
+          walk(node.children);
         }
       }
-    }
+    };
 
-    walk(data, "root")
-    return map
-  }, [data])
+    walk(data);
+    return map;
+  }, [data]);
 
-  // state
-  const [focusedItem, setFocusedItem] = useState<TreeItemIndex>()
-  const [expandedItems, setExpandedItems] = useState<TreeItemIndex[]>([])
-  const [selectedItems, setSelectedItems] = useState<TreeItemIndex[]>([])
+  // View state
+  const [focusedItem, setFocusedItem] = useState<TreeItemIndex>();
+  const [expandedItems, setExpandedItems] = useState<TreeItemIndex[]>([]);
+  const [selectedItems, setSelectedItems] = useState<TreeItemIndex[]>([]);
 
   return (
     <div className="h-full w-[220px] rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200">
@@ -87,44 +90,32 @@ export function FileTree({ data, onFileSelect }: FileTreeProps) {
           )
         }
         onCollapseItem={(item) =>
-          setExpandedItems((prev) =>
-            prev.filter((i) => i !== item.index)
-          )
+          setExpandedItems((prev) => prev.filter((i) => i !== item.index))
         }
-        onSelectItems={(items) => {
-          setSelectedItems(items)
+        onSelectItems={(selected) => {
+          setSelectedItems(selected);
 
-          const id = items[0]
-          if (!id) return
+          const id = selected[0];
+          if (!id || id === "root") return;
 
-          const node = items[0]
-          const treeItem = node && items.length === 1 ? items[0] : null
+          const item = items[id];
+          if (!item || item.isFolder) return;
 
-          if (treeItem && !items.includes("root")) {
-            const itemDef = items[0]
-            const isFile = !items.includes(itemDef)
-
-            if (isFile) {
-              onFileSelect?.(String(itemDef))
-            }
-          }
+          onFileSelect?.(String(id));
         }}
         renderItem={({ item, depth, context, children }) => (
-          <div
-            style={{ paddingLeft: depth * 14 }}
-            className={`flex flex-col`}
-          >
+          <div style={{ paddingLeft: depth * 14 }}>
             <div
-              className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm
+              className={`flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-sm cursor-pointer
                 ${
                   context.isSelected
                     ? "bg-zinc-700 text-white"
-                    : "hover:bg-zinc-800"
+                    : "hover:bg-zinc-800 rounded-sm"
                 }
               `}
-              {...context.itemContainerWithChildrenProps}
+              {...context.interactiveElementProps}
             >
-              {/* arrow */}
+              {/* Arrow */}
               {item.isFolder ? (
                 context.isExpanded ? (
                   <FaChevronDown className="text-zinc-400 text-xs" />
@@ -135,21 +126,19 @@ export function FileTree({ data, onFileSelect }: FileTreeProps) {
                 <span className="w-3" />
               )}
 
-              {/* icon */}
+              {/* Icon */}
               {item.isFolder ? (
                 context.isExpanded ? (
-                  <FaFolderOpen className="text-indigo-400" />
+                  <FaFolderOpen className="text-blue-500" />
                 ) : (
-                  <FaFolder className="text-indigo-400" />
+                  <FaFolder className="text-blue-500" />
                 )
               ) : (
                 <FaFileCode className="text-emerald-400" />
               )}
 
-              {/* label */}
-              <span className="truncate">
-                {item.data}
-              </span>
+              {/* Label */}
+              <span className="truncate">{item.data}</span>
             </div>
 
             {children}
@@ -159,5 +148,5 @@ export function FileTree({ data, onFileSelect }: FileTreeProps) {
         <Tree treeId="tree" rootItem="root" />
       </ControlledTreeEnvironment>
     </div>
-  )
+  );
 }

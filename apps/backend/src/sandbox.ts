@@ -12,7 +12,7 @@ export type ProjectFiles = Record<string, string>;
 export async function createSandbox(project: ProjectFiles) {
   // Create sandbox
   const sbx = await Sandbox.create({
-    timeoutMs:1800_000
+    timeoutMs: 3600_000 //1hr 
   });
   
   console.log(`Sandbox created: ${sbx.sandboxId}`);
