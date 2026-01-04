@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import logo from "../public/adlogo.png"
 import { cn } from "@/lib/utils"
@@ -11,13 +13,36 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
+import { NEXT_PUBLIC_BACKEND_URL } from "@/config"
+
+const backendUrl = NEXT_PUBLIC_BACKEND_URL;
+
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form>
+      <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+
+        const form = e.currentTarget;
+        const email = (form.email as HTMLInputElement).value;
+        const password = (form.password as HTMLInputElement).value;
+
+        const res = await fetch(`${backendUrl}/auth/signup`,
+          {
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify({email, password}),
+            credentials: "include",
+          }
+        );
+        const data = await res.json();
+        console.log("Signup Response :", data)
+      }}
+      >
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
