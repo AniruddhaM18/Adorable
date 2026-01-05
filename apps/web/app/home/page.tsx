@@ -1,7 +1,9 @@
+import Loader from "@/src/components/Loader";
+
 export default function HomePage(){
     return(
         <div>
-            HI RUSSHI
+            <Loader />
         </div>
     )
 }
