@@ -4,10 +4,6 @@ import { runUserRequest } from "../agent.js";
 import { assembleProject } from "../projectAssembler.js";
 import { createSandbox } from "../sandbox.js";
 
-/* =========================
-   Create Project
-========================= */
-
 export async function createProject(req: Request, res: Response) {
   const { prompt } = req.body;
 
@@ -17,6 +13,8 @@ export async function createProject(req: Request, res: Response) {
       message: "Prompt not found",
     });
   }
+
+  console.log("prompt recived");
 
   const userId = req.user?.id;
 
@@ -28,13 +26,9 @@ export async function createProject(req: Request, res: Response) {
   }
 
   try {
-    /* =========================
-       1. Run AI Agent
-    ========================= */
 
     const result = await runUserRequest(prompt);
 
-    // ❗ IMPORTANT: AI failure ≠ server failure
     if (!result.success) {
       return res.status(200).json({
         success: false,
@@ -49,15 +43,8 @@ export async function createProject(req: Request, res: Response) {
       });
     }
 
-    /* =========================
-       2. Assemble Files
-    ========================= */
-
+    ///assembling files
     const projectFiles = await assembleProject(result.files);
-
-    /* =========================
-       3. Create DB Records
-    ========================= */
 
     const { project, version } = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
@@ -83,9 +70,7 @@ export async function createProject(req: Request, res: Response) {
       }
     );
 
-    /* =========================
-       4. Create Sandbox
-    ========================= */
+//sandbox
 
     let sandbox;
     try {
@@ -102,9 +87,7 @@ export async function createProject(req: Request, res: Response) {
       });
     }
 
-    /* =========================
-       5. Finalize Project
-    ========================= */
+//finalize project
 
     await prisma.project.update({
       where: { id: project.id },
@@ -130,9 +113,7 @@ export async function createProject(req: Request, res: Response) {
   }
 }
 
-/* =========================
-   Get Project
-========================= */
+//get 
 
 export async function getProject(req: Request, res: Response) {
   try {

@@ -2,11 +2,7 @@ import "dotenv/config";
 import { Sandbox } from "@e2b/code-interpreter";
 import path from "path";
 
-/**
- * Final assembled project:
- * key   = file path (e.g. src/App.jsx)
- * value = full file content
- */
+
 export type ProjectFiles = Record<string, string>;
 
 export async function createSandbox(project: ProjectFiles) {
