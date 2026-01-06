@@ -8,9 +8,6 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js";
 import { getSystemPrompt } from "./prompt.js";
 
-/* =========================
-   Types
-========================= */
 
 type GeneratedFile = {
   path: string;
@@ -28,9 +25,6 @@ type AgentResult =
       error: string;
     };
 
-/* =========================
-   Utils
-========================= */
 
 function normalizeFileContent(content: string): string {
   if (typeof content !== "string") return "";
@@ -48,9 +42,7 @@ function safeJsonParse(value: string) {
   }
 }
 
-/* =========================
-   Tool Definition
-========================= */
+//tool
 
 const fileSchema = z.object({
   path: z.string(),
@@ -85,12 +77,10 @@ const createTool = tool(
   }
 );
 
-/* =========================
-   LLM Setup
-========================= */
+
 
 const llm = new ChatOpenAI({
-  model: "openai/gpt-4o-mini",
+  model: "z-ai/glm-4.7",
   apiKey: OPENROUTER_API_KEY,
   temperature: 0,
   configuration: {
@@ -104,9 +94,7 @@ const llm = new ChatOpenAI({
 
 const llmWithTools = llm.bindTools([createTool]);
 
-/* =========================
-   Agent Graph
-========================= */
+//graph
 
 async function agentNode(state: typeof MessagesAnnotation.State) {
   const response = await llmWithTools.invoke(state.messages);
@@ -132,9 +120,7 @@ const workflow = new StateGraph(MessagesAnnotation)
 
 export const appGraph = workflow.compile();
 
-/* =========================
-   Main Executor
-========================= */
+//executor
 
 export async function runUserRequest(
   userInput: string
@@ -180,9 +166,7 @@ export async function runUserRequest(
 
   const allFiles = Array.from(mergedFiles.values());
 
-  /* =========================
-     Graceful Failure (NO THROW)
-  ========================= */
+// for faliure
 
   if (allFiles.length === 0) {
     const last = finalState.messages.at(-1);
@@ -195,9 +179,7 @@ export async function runUserRequest(
     };
   }
 
-  /* =========================
-     Auto-wire App.jsx if missing
-  ========================= */
+//for app.jsx error
 
   const hasApp = allFiles.some((f) => f.path === "src/App.jsx");
   const mainComponent = allFiles.find((f) =>
