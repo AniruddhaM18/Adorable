@@ -83,7 +83,7 @@ export function InputBox() {
           </button>
 
           <button className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300">
-            <span>GPT-4</span>
+            <span>Hardcode</span>
             <ChevronDown className="h-4 w-4" />
           </button>
 
