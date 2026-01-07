@@ -51,7 +51,7 @@ const fileSchema = z.object({
 
 const createTool = tool(
   async ({ files }) => {
-    console.log("🛠️ Tool Invoked - Generating Files...");
+    console.log("Tool Invoked - Generating Files...");
 
     if (!Array.isArray(files)) {
       return { files: [] };
