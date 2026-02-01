@@ -83,13 +83,13 @@ export function SignupForm({
               required
             />
           </Field>
-          <Button className="bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400 text-neutral-800 transition-all duration-200 ease-in-out active:scale-95" type="submit">Create Account</Button>
+          <Button className="bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400 text-neutral-800 transition-all duration-200 ease-in-out active:scale-98" type="submit">Create Account</Button>
           </Field>
           <FieldSeparator>Or</FieldSeparator>
           <Field className="grid gap-4 sm:grid">
 
             <Button
-             className="bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400 text-neutral-800 transition-all duration-200 ease-in-out active:scale-95"
+             className="bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400 text-neutral-800 transition-all duration-200 ease-in-out active:scale-98"
              variant="outline" type="button">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path

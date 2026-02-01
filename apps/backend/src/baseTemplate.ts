@@ -1,7 +1,5 @@
 export const BASE_TEMPLATE: Record<string, string> = {
-  // -------------------------
   // package.json (UPDATED WITH DEPENDENCIES)
-  // -------------------------
   "package.json": `{
   "name": "adorable-app",
   "private": true,
@@ -29,9 +27,7 @@ export const BASE_TEMPLATE: Record<string, string> = {
 }
 `,
 
-  // -------------------------
   // vite.config.js
-  // -------------------------
   "vite.config.js": `
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -55,9 +51,7 @@ export default defineConfig({
 });
 `,
 
-  // -------------------------
   // tailwind.config.js
-  // -------------------------
   "tailwind.config.js": `
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -97,9 +91,7 @@ export default {
 };
 `,
 
-  // -------------------------
   // index.html
-  // -------------------------
   "index.html": `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -114,9 +106,7 @@ export default {
 </html>
 `,
 
-  // -------------------------
   // src/main.jsx
-  // -------------------------
   "src/main.jsx": `
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -161,9 +151,7 @@ body {
 }
 `,
 
-  // -------------------------
   // src/App.jsx
-  // -------------------------
   "src/App.jsx": `
 export default function App() {
   return (

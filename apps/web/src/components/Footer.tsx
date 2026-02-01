@@ -57,7 +57,7 @@ export default function Footer() {
           </h1>
         </div>
 
-        <div className="flex justify-between items-center pb-8 text-sm text-white">
+        <div className="flex justify-between items-center pb-8 text-sm text-neutral-300">
           <span>Adorable by Aniruddha</span>
           <span>© 2026 Adorable. All rights reserved.</span>
         </div>
