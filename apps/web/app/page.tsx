@@ -76,7 +76,7 @@ export default function Home() {
                 className={`relative z-10 max-w-[90rem] mx-auto px-8 py-8 mt-16 transition-all duration-1000 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
                     }`}
             >
-                <div className="bg-gradient-to-br from-neutral-800 to-neutral-600/50 rounded-[3rem] p-12 md:p-16 shadow-md">
+                <div className="bg-gradient-to-br from-neutral-900 to-neutral-900/50 rounded-[3rem] p-12 md:p-16 shadow-md">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div>
                             <h2 className="text-5xl font-bold text-gray-100 mb-6">

@@ -7,6 +7,11 @@ import { CodeSandbox } from "./CodeSandbox";
 import { Viewport } from "./ViewPort";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
 import { Button } from "@/components/ui/button";
+import { SlGlobe } from "react-icons/sl";
+import { IoMdGlobe } from "react-icons/io";
+
+
+
 const backendUrl = NEXT_PUBLIC_BACKEND_URL;
 
 
@@ -39,11 +44,11 @@ export function ViewSelector({ projectId }: { projectId: string }) {
           </TabsList>
 
 
-          <Button className="gradient-button-light" size="sm" variant="secondary"
+          <Button className="grad-blue transition-all duration-200 ease-in-out active:scale-98 text-white" size="sm" variant="secondary"
             onClick={() => {
               console.log("Run clicked");
             }}>
-            Deploy
+            Deploy <IoMdGlobe className="size-5 -mr-1" />
           </Button>
         </div>
 

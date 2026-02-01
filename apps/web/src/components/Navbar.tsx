@@ -31,6 +31,12 @@ export function Navbar() {
             Get Started
           </button>
         </Link>
+         {/* <Link href="/auth/signup" className="hidden md:block">
+          <button
+            className="grad-navy  px-6 py-2.5 rounded-xl">
+            Get Started
+          </button>
+        </Link> */}
       </div>
     </nav>
   );
