@@ -12,10 +12,7 @@ export async function createSandbox(project: ProjectFiles) {
   });
   
   console.log(`Sandbox created: ${sbx.sandboxId}`);
-  /**
-   * Create directory structure
-   * We extract all parent directories from file paths
-   */
+ 
   const uniqueDirs = new Set(
     Object.keys(project).map((filePath) => path.dirname(filePath))
   );

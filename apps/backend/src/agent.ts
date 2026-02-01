@@ -80,7 +80,7 @@ const createTool = tool(
 
 
 const llm = new ChatOpenAI({
-  model: "z-ai/glm-4.7",
+  model: "openai/o4-mini",
   apiKey: OPENROUTER_API_KEY,
   temperature: 0,
   configuration: {

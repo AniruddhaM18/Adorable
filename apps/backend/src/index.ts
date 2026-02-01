@@ -24,6 +24,7 @@ app.use("/project", projectRouter);
 
 app.use("/auth", authRouter);
 
+
 app.listen(3001, () => {
     console.log("Server running @:3001")
 })
