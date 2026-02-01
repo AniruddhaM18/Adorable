@@ -7,7 +7,9 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js";
 import { getSystemPrompt } from "./prompt.js";
+import { chatTool } from "./chatTools.js";
 
+/* Types */
 
 type GeneratedFile = {
   path: string;
@@ -25,6 +27,7 @@ type AgentResult =
       error: string;
     };
 
+/* Helpers */
 
 function normalizeFileContent(content: string): string {
   if (typeof content !== "string") return "";
@@ -42,7 +45,7 @@ function safeJsonParse(value: string) {
   }
 }
 
-//tool
+/* create_app tool */
 
 const fileSchema = z.object({
   path: z.string(),
@@ -51,7 +54,7 @@ const fileSchema = z.object({
 
 const createTool = tool(
   async ({ files }) => {
-    console.log("Tool Invoked - Generating Files...");
+    console.log("Tool Invoked: create_app");
 
     if (!Array.isArray(files)) {
       return { files: [] };
@@ -62,7 +65,7 @@ const createTool = tool(
       content: normalizeFileContent(f.content),
     }));
 
-    console.log(`Generated ${normalizedFiles.length} files.`);
+    console.log(`Generated ${normalizedFiles.length} files`);
 
     return {
       files: normalizedFiles,
@@ -70,14 +73,17 @@ const createTool = tool(
   },
   {
     name: "create_app",
-    description: "Generate or modify project files. ALWAYS call this tool to output code.",
+    description:
+      "Generate or modify project files. ALWAYS call this tool to output code.",
     schema: z.object({
       files: z.array(fileSchema),
     }),
   }
 );
 
-
+/* ------------------------------------------------------------------ */
+/* LLM */
+/* ------------------------------------------------------------------ */
 
 const llm = new ChatOpenAI({
   model: "openai/o4-mini",
@@ -92,21 +98,40 @@ const llm = new ChatOpenAI({
   },
 });
 
-const llmWithTools = llm.bindTools([createTool]);
+/* IMPORTANT: bind ALL tools */
+const llmWithTools = llm.bindTools([
+  createTool,
+  chatTool,
+]);
 
-//graph
+/* ------------------------------------------------------------------ */
+/* LangGraph */
+/* ------------------------------------------------------------------ */
 
 async function agentNode(state: typeof MessagesAnnotation.State) {
   const response = await llmWithTools.invoke(state.messages);
   return { messages: [response] };
 }
 
+/**
+ * Decide whether to execute tools or stop.
+ * ToolNode will decide WHICH tool to run.
+ */
 function shouldContinue(state: typeof MessagesAnnotation.State) {
   const last = state.messages[state.messages.length - 1] as AIMessage;
-  return last.tool_calls?.length ? "tools" : "__end__";
+
+  if (!last.tool_calls || last.tool_calls.length === 0) {
+    return "__end__";
+  }
+
+  return "tools";
 }
 
-const toolNode = new ToolNode([createTool]);
+/* IMPORTANT: ToolNode MUST know about ALL tools */
+const toolNode = new ToolNode([
+  createTool,
+  chatTool,
+]);
 
 const workflow = new StateGraph(MessagesAnnotation)
   .addNode("agent", agentNode)
@@ -120,7 +145,9 @@ const workflow = new StateGraph(MessagesAnnotation)
 
 export const appGraph = workflow.compile();
 
-//executor
+/* ------------------------------------------------------------------ */
+/* One-shot project generation (unchanged behavior) */
+/* ------------------------------------------------------------------ */
 
 export async function runUserRequest(
   userInput: string
@@ -166,8 +193,7 @@ export async function runUserRequest(
 
   const allFiles = Array.from(mergedFiles.values());
 
-// for faliure
-
+  /* failure */
   if (allFiles.length === 0) {
     const last = finalState.messages.at(-1);
     return {
@@ -179,8 +205,7 @@ export async function runUserRequest(
     };
   }
 
-//for app.jsx error
-
+  /* App.jsx fallback */
   const hasApp = allFiles.some((f) => f.path === "src/App.jsx");
   const mainComponent = allFiles.find((f) =>
     f.path.startsWith("src/components/")
@@ -225,4 +250,41 @@ export default function App() {
     files: allFiles,
     projectName: projectName ?? "Untitled Project",
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Streaming execution (SSE) */
+/* ------------------------------------------------------------------ */
+
+export async function runAgentStream(
+  messages: { role: string; content: string }[],
+  onEvent: (event: any) => void
+) {
+  const stream = await appGraph.stream(
+    { messages },
+    { recursionLimit: 50 }
+  );
+
+  for await (const chunk of stream) {
+    for (const state of Object.values(chunk)) {
+      const last = state.messages?.at(-1);
+      if (!last) continue;
+
+      if (last instanceof AIMessage && typeof last.content === "string") {
+        onEvent({
+          type: "token",
+          content: last.content,
+        });
+      }
+
+      if (last instanceof ToolMessage) {
+        onEvent({
+          type: "tool",
+          content: last.content,
+        });
+      }
+    }
+  }
+
+  onEvent({ type: "done" });
 }
