@@ -3,10 +3,11 @@ import Image from "next/image";
 import logo from "../../public/adlogo.png";
 import { FaSquareGithub, FaLinkedin, FaSquareXTwitter } from "react-icons/fa6";
 import { SiGmail } from "react-icons/si";
+import { SparklesCore } from "./ui/sparkles";
 
 export default function Footer() {
   return (
-    <footer className="bg-neutral-950/50 text-white mt-40 border-t border-t-neutral-800">
+    <footer className="bg-black text-white mt-40 border-t border-t-neutral-800">
       <div className="max-w-7xl mx-auto px-6">
 
         <div className="flex justify-between pt-20">
@@ -51,11 +52,32 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex justify-center items-center pt-32 pb-18">
-          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent bg-clip-text bg-linear-to-b from-neutral-700 via-neutral-800 to-zinc-950 ">
+        <div className="flex flex-col items-center justify-center pt-28 pb-8 relative overflow-hidden">
+          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent bg-clip-text bg-linear-to-b from-neutral-600 via-neutral-800 to-zinc-950 relative z-20">
             Adorable
           </h1>
+
+          <div className="relative w-full h-28 -mt-4">
+            <div className="absolute inset-x-10 top-0 bg-gradient-to-r from-transparent via-neutral-400 to-transparent h-[2px] w-4/5 blur-sm" />
+            <div className="absolute inset-x-10 top-0 bg-gradient-to-r from-transparent via-neutral-400 to-transparent h-px w-4/5" />
+
+            <div className="absolute inset-x-1/4 top-0 bg-gradient-to-r from-transparent via-neutral-500 to-transparent h-[4px] w-2/5 blur-sm" />
+            <div className="absolute inset-x-1/4 top-0 bg-gradient-to-r from-transparent via-neutral-500 to-transparent h-px w-2/5" />
+
+            <SparklesCore
+              background="transparent"
+              minSize={0.35}
+              maxSize={0.9}
+              particleDensity={900}
+              className="w-full h-full"
+              particleColor="#E5E5E5"
+            />
+
+            <div className="absolute inset-0 bg-black [mask-image:radial-gradient(320px_100px_at_top,transparent_30%,white)]" />
+          </div>
         </div>
+
+
 
         <div className="flex justify-between items-center pb-8 text-sm text-neutral-300">
           <span>Adorable by Aniruddha</span>
