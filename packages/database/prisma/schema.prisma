@@ -26,6 +26,7 @@ model Project {
   name             String
   currentVersionId String
   previewUrl       String
+  deployedUrl      String?
   staus            ProjectStatus @default(creating)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
