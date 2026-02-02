@@ -5,7 +5,6 @@ import { signinSchema, signupSchema } from "../schema.js";
 import { prisma } from "@repo/database";
 import { JWT_SECRET } from "../config.js";
 
-
 //signup controller
 export async function signup(req:Request, res:Response) {
     const userData = signupSchema.safeParse(req.body);
@@ -109,8 +108,6 @@ export async function signin(req: Request, res: Response){
     });
 }
 
-
-
 //signot/logout
 export async function logout(req: Request, res: Response){
     res.clearCookie("sessionToken", {
@@ -122,7 +119,6 @@ export async function logout(req: Request, res: Response){
         message: "Logged out successfully"
     })
 };
-
 
 // /me endpoint
 export async function getMe(req: Request, res: Response){

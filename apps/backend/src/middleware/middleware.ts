@@ -5,8 +5,10 @@ import { JWT_SECRET } from "../config.js";
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
-        //get token from headers
-        const token = req.cookies.sessionToken || req.headers.authorization?.replace("Bearer ", "");
+        //get token from headers, cookies, or query params (for EventSource which can't send cookies)
+        const token = req.cookies.sessionToken ||
+            req.headers.authorization?.replace("Bearer ", "") ||
+            (req.query.token as string);
         if (!token) {
             return res.status(401).json({
                 message: "authentication required"
