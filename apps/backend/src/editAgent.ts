@@ -5,11 +5,10 @@ import { StateGraph, MessagesAnnotation, END } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { OPENROUTER_API_KEY } from "./config.js";
-import { getEditSystemPrompt } from "./prompt.js";
+import { getEditSystemPrompt, getErrorFixPrompt } from "./prompt.js";
 import { modifyTool, FileChange } from "./modifyTools.js";
 import { chatTool } from "./chatTools.js";
 
-/* Types */
 
 type EditAgentResult =
     | {
@@ -22,7 +21,6 @@ type EditAgentResult =
         error: string;
     };
 
-/* LLM setup */
 
 const llm = new ChatOpenAI({
     model: "openai/o4-mini",
@@ -37,10 +35,10 @@ const llm = new ChatOpenAI({
     },
 });
 
-/* Bind edit-specific tools */
+// Bind edit-specific tools
 const editLlmWithTools = llm.bindTools([modifyTool, chatTool]);
 
-/* LangGraph for edit agent */
+// LangGraph for edit agent
 
 async function editAgentNode(state: typeof MessagesAnnotation.State) {
     const response = await editLlmWithTools.invoke(state.messages);
@@ -71,7 +69,6 @@ const editWorkflow = new StateGraph(MessagesAnnotation)
 
 export const editGraph = editWorkflow.compile();
 
-/* Helper to parse JSON safely */
 
 function safeJsonParse(value: string) {
     try {
@@ -81,7 +78,7 @@ function safeJsonParse(value: string) {
     }
 }
 
-/* Streaming edit execution */
+///Streaming edit execution
 
 export async function runEditAgentStream(
     currentFiles: Record<string, string>,
@@ -173,7 +170,7 @@ export async function runEditAgentStream(
     }
 }
 
-/* One-shot edit execution (for non-streaming use cases) */
+/// One-shot edit execution (for non-streaming use cases)
 
 export async function runEditRequest(
     currentFiles: Record<string, string>,
@@ -228,4 +225,92 @@ export async function runEditRequest(
         success: true,
         files: collectedFiles,
     };
+}
+
+/// Error fix streaming execution - used when build validation fails
+
+export async function runErrorFixStream(
+    currentFiles: Record<string, string>,
+    buildErrors: string,
+    onEvent: (event: any) => void
+): Promise<FileChange[]> {
+    console.log("runErrorFixStream: Starting error fix...");
+    const systemPrompt = getErrorFixPrompt(currentFiles, buildErrors);
+
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "Please fix the build errors shown above." },
+    ];
+
+    const stream = await editGraph.stream({ messages }, { recursionLimit: 50 });
+
+    const collectedFiles: FileChange[] = [];
+
+    try {
+        for await (const chunk of stream) {
+            console.log("runErrorFixStream: Processing chunk...");
+            for (const state of Object.values(chunk)) {
+                const last = (state as any).messages?.at(-1);
+                if (!last) continue;
+
+                if (last instanceof AIMessage && typeof last.content === "string") {
+                    onEvent({
+                        type: "token",
+                        content: last.content,
+                    });
+                }
+
+                if (last instanceof ToolMessage) {
+                    console.log("runErrorFixStream: Got ToolMessage");
+                    const content =
+                        typeof last.content === "string"
+                            ? safeJsonParse(last.content) ?? last.content
+                            : last.content;
+
+                    if (content && typeof content === "object") {
+                        if (Array.isArray((content as any).files)) {
+                            console.log(`runErrorFixStream: Found ${(content as any).files.length} files in tool result`);
+                            for (const file of (content as any).files) {
+                                if (file?.path) {
+                                    collectedFiles.push(file);
+                                    onEvent({
+                                        type: "file_fix",
+                                        file: file,
+                                    });
+                                }
+                            }
+                        }
+
+                        if ((content as any).type === "chat" && (content as any).message) {
+                            onEvent({
+                                type: "token",
+                                content: (content as any).message,
+                            });
+                        }
+                    }
+
+                    onEvent({
+                        type: "tool",
+                        content: last.content,
+                    });
+                }
+            }
+        }
+
+        onEvent({
+            type: "fix_done",
+            files: collectedFiles,
+        });
+
+        console.log(`ErrorFixAgent finished. Collected ${collectedFiles.length} fixed files:`, collectedFiles.map(f => f.path));
+
+        return collectedFiles;
+    } catch (error) {
+        console.error("runErrorFixStream error:", error);
+        onEvent({
+            type: "error",
+            message: "Failed to fix build errors",
+        });
+        return [];
+    }
 }
