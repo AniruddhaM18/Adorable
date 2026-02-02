@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
 
 type Message = {
   id: number;
@@ -8,10 +9,15 @@ type Message = {
   content: string;
 };
 
-export function ChatSidebar() {
+type ChatSidebarProps = {
+  projectId?: string;
+  onFilesUpdate?: (files: any) => void;
+};
+
+export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   function send() {
     if (!input.trim()) return;
@@ -34,47 +40,128 @@ export function ChatSidebar() {
     streamAssistantMessage([...messages, userMessage]);
   }
 
-  function streamAssistantMessage(chatHistory: Message[]) {
-    eventSourceRef.current?.close();
+  async function streamAssistantMessage(chatHistory: Message[]) {
+    setIsLoading(true);
 
-    const es = new EventSource(
-      "/api/chat?payload=" +
-        encodeURIComponent(
-          JSON.stringify({
-            messages: chatHistory.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          })
-        )
+    // Use edit endpoint if projectId is provided, otherwise use regular chat
+    const endpoint = projectId
+      ? `${NEXT_PUBLIC_BACKEND_URL}/api/chat/edit/${projectId}`
+      : "/api/chat";
+
+    // Build URL with payload
+    const payloadParam = encodeURIComponent(
+      JSON.stringify({
+        messages: chatHistory.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+      })
     );
 
-    eventSourceRef.current = es;
+    const url = `${endpoint}?payload=${payloadParam}`;
 
-    es.onmessage = (e) => {
-      const data = JSON.parse(e.data);
+    try {
+      // Use fetch with credentials to send cookies cross-origin
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include", // This sends cookies!
+        headers: {
+          "Accept": "text/event-stream",
+        },
+      });
 
-      if (data.type === "token") {
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-          if (last?.role === "assistant") {
-            last.content += data.content;
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No reader available");
+      }
+
+      let buffer = "";
+
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines from buffer
+        const lines = buffer.split("\n");
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const jsonStr = line.slice(6);
+              const data = JSON.parse(jsonStr);
+              console.log("SSE event received:", data.type);
+
+              if (data.type === "token") {
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const last = updated[updated.length - 1];
+
+                  if (last?.role === "assistant") {
+                    last.content += data.content;
+                  }
+
+                  return updated;
+                });
+              }
+
+              // Handle file updates from edit agent
+              if (data.type === "file_update" && onFilesUpdate) {
+                console.log("File update:", data.file);
+              }
+
+              // Handle version created - full files update
+              if (data.type === "version_created" && onFilesUpdate) {
+                console.log("Version created! Files:", Object.keys(data.files));
+                onFilesUpdate(data.files);
+              }
+
+              if (data.type === "done") {
+                setIsLoading(false);
+              }
+
+              if (data.type === "error") {
+                setIsLoading(false);
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const last = updated[updated.length - 1];
+                  if (last?.role === "assistant") {
+                    last.content = data.message || "An error occurred.";
+                  }
+                  return updated;
+                });
+              }
+            } catch (e) {
+              // Log JSON parse errors for debugging
+              console.error("SSE parse error:", e, "Line:", line.slice(0, 100));
+            }
           }
-
-          return updated;
-        });
+        }
       }
 
-      if (data.type === "done") {
-        es.close();
-      }
-    };
-
-    es.onerror = () => {
-      es.close();
-    };
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Stream error:", error);
+      setIsLoading(false);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") {
+          last.content = "Failed to connect. Please try again.";
+        }
+        return updated;
+      });
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -102,16 +189,14 @@ export function ChatSidebar() {
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`flex ${
-              m.role === "user" ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"
+              }`}
           >
             <div
-              className={`max-w-[90%] rounded-lg px-4 py-3 text-sm ${
-                m.role === "user"
-                  ? "bg-blue-600 text-white"
-                  : "bg-neutral-800 text-neutral-200"
-              }`}
+              className={`max-w-[90%] rounded-lg px-4 py-3 text-sm ${m.role === "user"
+                ? "bg-blue-600 text-white"
+                : "bg-neutral-800 text-neutral-200"
+                }`}
             >
               {m.content || "…"}
             </div>

@@ -10,9 +10,9 @@ export async function createSandbox(project: ProjectFiles) {
   const sbx = await Sandbox.create({
     timeoutMs: 3600_000 //1hr 
   });
-  
+
   console.log(`Sandbox created: ${sbx.sandboxId}`);
- 
+
   const uniqueDirs = new Set(
     Object.keys(project).map((filePath) => path.dirname(filePath))
   );
@@ -66,3 +66,62 @@ export async function createSandbox(project: ProjectFiles) {
     url,
   };
 };
+
+/* Update files in an existing sandbox */
+
+export async function updateSandboxFiles(
+  sandboxId: string,
+  files: Record<string, string>
+): Promise<void> {
+  console.log(`Connecting to sandbox: ${sandboxId}`);
+
+  // Connect to existing sandbox
+  const sbx = await Sandbox.connect(sandboxId);
+
+  console.log(`Updating ${Object.keys(files).length} files in sandbox...`);
+
+  // Create any new directories that might be needed
+  const uniqueDirs = new Set(
+    Object.keys(files).map((filePath) => path.dirname(filePath))
+  );
+
+  const dirsToCreate = [...uniqueDirs].filter(
+    (dir) => dir !== "." && dir !== "/"
+  );
+
+  if (dirsToCreate.length > 0) {
+    await Promise.all(
+      dirsToCreate.map((dir) =>
+        sbx.commands.run(`mkdir -p ${dir}`)
+      )
+    );
+  }
+
+  // Write updated files
+  await Promise.all(
+    Object.entries(files).map(([filePath, content]) => {
+      console.log(`→ Updating ${filePath}`);
+      return sbx.files.write(filePath, content);
+    })
+  );
+
+  // Check if dev server is running by checking if port 5173 is listening
+  // Using lsof or netstat to check for actual port binding
+  const checkResult = await sbx.commands.run("lsof -i :5173 2>/dev/null || netstat -tlnp 2>/dev/null | grep 5173 || echo 'port_not_open'");
+  const isServerRunning = !checkResult.stdout.includes("port_not_open") && checkResult.stdout.trim().length > 0;
+
+  console.log(`Port check result: ${isServerRunning ? 'running' : 'not running'}`);
+
+  if (!isServerRunning) {
+    console.log("Dev server not running, restarting...");
+    // Reinstall dependencies in case package.json changed
+    await sbx.commands.run("npm install");
+    // Restart the dev server in background
+    await sbx.commands.run("npm run dev", { background: true });
+    // Wait for the server to start
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log("Dev server restarted.");
+  } else {
+    console.log("Dev server is running. Files updated successfully.");
+  }
+}
