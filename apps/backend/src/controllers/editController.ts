@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import { prisma, Prisma } from "@repo/database";
-import { runEditAgentStream } from "../editAgent.js";
-import { updateSandboxFiles } from "../sandbox.js";
+import { runEditAgentStream, runErrorFixStream } from "../editAgent.js";
+import { updateSandboxFiles, updateSandboxFilesTemporary, validateSandboxBuild } from "../sandbox.js";
 import { FileChange } from "../modifyTools.js";
+
+/* Constants for error recovery */
+const MAX_FIX_ATTEMPTS = 3;
 
 /* Helper to convert nested files object to flat Record<string, string> */
 
@@ -149,15 +152,87 @@ export async function editProjectChat(req: Request, res: Response) {
 
         console.log(`Edit agent returned ${fileChanges.length} file changes:`, fileChanges.map(f => f.path));
 
-        // If we have file changes, save them
+        // If we have file changes, validate and potentially fix them
         if (fileChanges.length > 0) {
-            const updatedFiles = applyFileChanges(currentFiles, fileChanges);
+            let updatedFiles = applyFileChanges(currentFiles, fileChanges);
+
+            // Extract sandboxId from preview URL for validation
+            const urlMatch = project.previewUrl.match(/https:\/\/\d+-([^.]+)\.e2b\.app/);
+            const sandboxId = urlMatch ? urlMatch[1] : null;
+
+            // Run validation loop if we have a sandbox
+            if (sandboxId) {
+                let currentFilesToValidate = updatedFiles;
+                let fixAttempts = 0;
+                let buildSuccess = false;
+
+                while (!buildSuccess && fixAttempts < MAX_FIX_ATTEMPTS) {
+                    // Write files temporarily to sandbox for validation
+                    res.write(`data: ${JSON.stringify({ type: "status", message: "Validating code..." })}\n\n`);
+                    console.log(`Validation attempt ${fixAttempts + 1}: Writing files to sandbox for validation`);
+
+                    try {
+                        await updateSandboxFilesTemporary(sandboxId, currentFilesToValidate);
+                    } catch (tempErr) {
+                        console.error("Failed to write temp files to sandbox:", tempErr);
+                        break; // Can't validate, proceed anyway
+                    }
+
+                    // Run build validation
+                    try {
+                        const validation = await validateSandboxBuild(sandboxId);
+
+                        if (validation.success) {
+                            console.log("Build validation passed!");
+                            buildSuccess = true;
+                            updatedFiles = currentFilesToValidate;
+                        } else {
+                            fixAttempts++;
+                            console.log(`Build failed (attempt ${fixAttempts}/${MAX_FIX_ATTEMPTS}). Errors:\n${validation.errors}`);
+
+                            if (fixAttempts < MAX_FIX_ATTEMPTS) {
+                                res.write(`data: ${JSON.stringify({
+                                    type: "status",
+                                    message: `Fixing errors (attempt ${fixAttempts}/${MAX_FIX_ATTEMPTS})...`
+                                })}\n\n`);
+
+                                // Run AI error fix
+                                const fixChanges = await runErrorFixStream(
+                                    currentFilesToValidate,
+                                    validation.errors || "Build failed with unknown errors",
+                                    (event) => {
+                                        res.write(`data: ${JSON.stringify(event)}\n\n`);
+                                    }
+                                );
+
+                                if (fixChanges.length > 0) {
+                                    currentFilesToValidate = applyFileChanges(currentFilesToValidate, fixChanges);
+                                    console.log(`Applied ${fixChanges.length} fixes. Revalidating...`);
+                                } else {
+                                    console.log("No fixes generated, stopping retry loop");
+                                    break;
+                                }
+                            } else {
+                                // Max retries reached - still save but warn user
+                                res.write(`data: ${JSON.stringify({
+                                    type: "warning",
+                                    message: "Build validation failed after max retries. Code saved but may contain errors."
+                                })}\n\n`);
+                                updatedFiles = currentFilesToValidate;
+                            }
+                        }
+                    } catch (validationErr) {
+                        console.error("Validation error:", validationErr);
+                        break; // Can't validate, proceed anyway
+                    }
+                }
+            }
 
             // Create new version - store flat format to match initial project creation
             const newVersion = await prisma.version.create({
                 data: {
                     projectId: project.id,
-                    files: updatedFiles,  // Store flat format for consistency
+                    files: updatedFiles,
                     prompt: latestMessage.content,
                 },
             });
@@ -168,29 +243,23 @@ export async function editProjectChat(req: Request, res: Response) {
                 data: { currentVersionId: newVersion.id },
             });
 
-            // Try to update the sandbox with new files
-            try {
-                // Extract sandboxId from preview URL
-                // URL format: https://5173-{sandboxId}.e2b.app
-                const urlMatch = project.previewUrl.match(/https:\/\/\d+-([^.]+)\.e2b\.app/);
-                if (urlMatch) {
-                    const sandboxId = urlMatch[1];
-                    console.log(`Updating sandbox: ${sandboxId}`);
+            // Try to update the sandbox with final files
+            if (sandboxId) {
+                try {
+                    console.log(`Updating sandbox with final files: ${sandboxId}`);
                     await updateSandboxFiles(sandboxId, updatedFiles);
+                } catch (sandboxErr) {
+                    console.error("Failed to update sandbox:", sandboxErr);
                 }
-            } catch (sandboxErr) {
-                console.error("Failed to update sandbox:", sandboxErr);
-                // Don't fail the request, the files are saved
             }
 
             // Notify frontend about the completed update
-            // Send flat files to match the format from initial project load
             console.log(`Sending version_created event with ${Object.keys(updatedFiles).length} files`);
             res.write(
                 `data: ${JSON.stringify({
                     type: "version_created",
                     versionId: newVersion.id,
-                    files: updatedFiles,  // Send flat format, not nested
+                    files: updatedFiles,
                 })}\n\n`
             );
         }

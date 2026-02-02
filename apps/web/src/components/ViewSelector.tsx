@@ -8,6 +8,7 @@ import { Viewport } from "./ViewPort";
 import { Button } from "@/components/ui/button";
 import { IoMdGlobe } from "react-icons/io";
 import { IoReload } from "react-icons/io5";
+import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
 
 type ViewSelectorProps = {
   projectId: string;
@@ -18,6 +19,8 @@ type ViewSelectorProps = {
 
 export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSelectorProps) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
 
   // Refresh preview when files change
   useEffect(() => {
@@ -32,6 +35,34 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
 
   const handleRefreshPreview = () => {
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    try {
+      const response = await fetch(
+        `${NEXT_PUBLIC_BACKEND_URL}/project/${projectId}/deploy`,
+        {
+          method: "POST",
+          credentials: "include", // Send cookies for auth
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        setDeployedUrl(data.url);
+        // Open in new tab
+        window.open(data.url, "_blank");
+      } else {
+        alert(`Deploy failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (error: any) {
+      console.error("Deploy error:", error);
+      alert(`Deploy failed: ${error.message}`);
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   return (
@@ -49,6 +80,16 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
 
 
           <div className="flex items-center gap-2">
+            {deployedUrl && (
+              <a
+                href={deployedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 hover:underline truncate max-w-[150px]"
+              >
+                {deployedUrl.replace("https://", "")}
+              </a>
+            )}
             <Button
               className="bg-neutral-700 hover:bg-neutral-600 text-white"
               size="sm"
@@ -57,11 +98,14 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
             >
               <IoReload className="size-4" />
             </Button>
-            <Button className="grad-blue transition-all duration-200 ease-in-out active:scale-98 text-white" size="sm" variant="secondary"
-              onClick={() => {
-                console.log("Run clicked");
-              }}>
-              Deploy <IoMdGlobe className="size-5 -mr-1" />
+            <Button
+              className="grad-blue transition-all duration-200 ease-in-out active:scale-98 text-white"
+              size="sm"
+              variant="secondary"
+              onClick={handleDeploy}
+              disabled={isDeploying}
+            >
+              {isDeploying ? "Deploying..." : "Deploy"} <IoMdGlobe className="size-5 -mr-1" />
             </Button>
           </div>
         </div>
@@ -80,6 +124,7 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
           <TabsContent value="preview" className="h-full">
             <Viewport key={refreshKey} url={previewUrl} />
           </TabsContent>
+
         </div>
       </Tabs>
     </div>
