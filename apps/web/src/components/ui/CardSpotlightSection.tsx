@@ -3,9 +3,6 @@
 import { CardSpotlight } from "./card-spotlight";
 
 
-/* ============================
-   Main Section
-============================ */
 export function CardSpotlightSection() {
   return (
     <div className="max-w-7xl mx-auto px-6">
@@ -42,9 +39,7 @@ function AuthCard() {
   );
 }
 
-/* ============================
-   Card 2 — Stats / Metrics
-============================ */
+
 function AnalyticsCard() {
   return (
     <CardSpotlight className="h-96 w-full">
