@@ -45,6 +45,7 @@ model Version {
 
 enum ProjectStatus {
   creating
+  generating
   ready
   failed
 }
