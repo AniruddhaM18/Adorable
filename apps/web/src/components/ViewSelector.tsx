@@ -9,23 +9,29 @@ import { Button } from "@/components/ui/button";
 import { IoMdGlobe } from "react-icons/io";
 import { IoReload } from "react-icons/io5";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
+import Loader from "./Loader";
 
 type ViewSelectorProps = {
   projectId: string;
   files: any;
   previewUrl: string;
   isLoading?: boolean;
+  isCreating?: boolean;
 };
 
-export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSelectorProps) {
+export function ViewSelector({
+  projectId,
+  files,
+  previewUrl,
+  isLoading,
+  isCreating,
+}: ViewSelectorProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
 
-  // Refresh preview when files change
   useEffect(() => {
     if (files) {
-      // Add a small delay to allow HMR to process
       const timer = setTimeout(() => {
         setRefreshKey((prev) => prev + 1);
       }, 1000);
@@ -44,7 +50,7 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
         `${NEXT_PUBLIC_BACKEND_URL}/project/${projectId}/deploy`,
         {
           method: "POST",
-          credentials: "include", // Send cookies for auth
+          credentials: "include",
         }
       );
 
@@ -52,7 +58,6 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
 
       if (response.ok && data.url) {
         setDeployedUrl(data.url);
-        // Open in new tab
         window.open(data.url, "_blank");
       } else {
         alert(`Deploy failed: ${data.error || "Unknown error"}`);
@@ -65,12 +70,21 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
     }
   };
 
-  return (
-    <div className="h-screen bg-neutral-900 pl-[404px] pt-2 pr-2 pb-1">
+  // Show Loader when creating project
+  if (isCreating) {
+    return (
+      <div className="h-screen bg-neutral-900 pl-[404px] pt-12 pr-1 pb-1">
+        <div className="h-full border border-neutral-700 rounded-md overflow-hidden">
+          <Loader />
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="h-screen bg-neutral-900 pl-[404px] pt-1 pr-1 pb-0.5">
       <Tabs defaultValue="code" className="flex h-full flex-col w-full">
         <div className="flex items-center justify-between">
-          {/* Tabs ONLY */}
           <TabsList className="border border-slate-600 bg-neutral-900">
             <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="code">
@@ -78,14 +92,13 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
             </TabsTrigger>
           </TabsList>
 
-
           <div className="flex items-center gap-2">
             {deployedUrl && (
               <a
                 href={deployedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-400 hover:underline truncate max-w-[150px]"
+                className="text-xs text-blue-400 hover:underline truncate max-w-[230px]"
               >
                 {deployedUrl.replace("https://", "")}
               </a>
@@ -110,7 +123,7 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
           </div>
         </div>
 
-        <div className="flex-1 border border-slate-600 rounded-md overflow-hidden mt-2">
+        <div className="flex-1 border border-neutral-600 rounded-md overflow-hidden">
           <TabsContent value="code" className="h-full">
             {isLoading ? (
               <div className="flex items-center justify-center h-full text-zinc-500">
@@ -124,7 +137,6 @@ export function ViewSelector({ projectId, files, previewUrl, isLoading }: ViewSe
           <TabsContent value="preview" className="h-full">
             <Viewport key={refreshKey} url={previewUrl} />
           </TabsContent>
-
         </div>
       </Tabs>
     </div>

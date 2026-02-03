@@ -1,44 +1,107 @@
 "use client";
-export default function Loader() {
+
+import { useEffect, useState } from "react";
+
+interface LoaderProps {
+    statusMessage?: string;
+}
+
+const defaultSteps = [
+    "Understanding your request...",
+    "Generating code...",
+    "Setting up preview...",
+    "Almost ready...",
+];
+
+export default function Loader({ statusMessage }: LoaderProps) {
+    const [currentStep, setCurrentStep] = useState(0);
+    const [dots, setDots] = useState("");
+
+    // Animate dots
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Cycle through steps if no statusMessage provided
+    useEffect(() => {
+        if (!statusMessage) {
+            const interval = setInterval(() => {
+                setCurrentStep((prev) => (prev + 1) % defaultSteps.length);
+            }, 3000);
+            return () => clearInterval(interval);
+        }
+    }, [statusMessage]);
+
+    const displayMessage = statusMessage || defaultSteps[currentStep];
+
     return (
-      <div className="p-20 flex justify-center items-center">
-        <div className="bg-gray-800 w-120 rounded-lg">
-            <div className="bg-gray-900 rounded-2xl p-6 shadow-2xl order-2 md:order-1">
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                </div>
-                <div className="space-y-4">
-                    <div className="bg-gray-800 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-400" />
-                            <div className="flex-1">
-                                <div className="text-gray-300 text-sm mb-2">
-                                    Planning your Project
-                                </div>
-                                <div className="bg-gray-700 rounded-lg p-3 text-xs text-gray-400 font-mono">
-                                    AI is creating your site,
-                                    <br />
-                                    hold on... 
-                                </div>
-                            </div>
-                        </div>
+        <div className="flex h-full w-full items-center justify-center bg-neutral-900">
+            <div className="w-full max-w-md">
+                <div className="rounded-lg bg-neutral-950/50 p-8 backdrop-blur-sm border border-neutral-800">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="w-3 h-3 rounded-full bg-neutral-700/80" />
+                        <div className="w-3 h-3 rounded-full bg-neutral-800/80" />
+                        <div className="w-3 h-3 rounded-full bg-neutral-900/90" />
+                        <div className="w-3 h-3 rounded-full bg-neutral-900/60" />
                     </div>
 
-                    <div className="bg-blue-900/30 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-500" />
-                            <div className="flex-1">
-                                <div className="text-gray-300 text-md">
-                                    Your Project is Ready!
-                                </div>
+                    <div className="space-y-6">
+                        <div className="flex justify-center">
+                            <div className="relative">
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-neutral-700 to-zinc-900 animate-pulse" />
+                                <div className="absolute inset-0 w-16 h-16 rounded-full bg-gradient-to-tr from-neurral-500 to-neutral-600 animate-ping opacity-30" />
                             </div>
+                        </div>
+
+                        <div className="text-center">
+                            <h3 className="text-lg font-medium text-white mb-2">
+                                Building Your Project
+                            </h3>
+                            <p className="text-neutral-400 text-sm min-h-[20px]">
+                                {displayMessage}{dots}
+                            </p>
+                        </div>
+
+                        <div className="h-1 bg-neutral-700 rounded-lg overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-neutral-500 to-gray-600 rounded-full animate-progress"
+                                style={{
+                                    animation: "progress 2s ease-in-out infinite",
+                                }}
+                            />
+                        </div>
+
+                        <div className="flex justify-center gap-2">
+                            {defaultSteps.map((_, index) => (
+                                <div
+                                    key={index}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index <= currentStep || statusMessage
+                                            ? "bg-zinc-300"
+                                            : "bg-neutral-600"
+                                        }`}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <style jsx>{`
+        @keyframes progress {
+          0% {
+            width: 0%;
+          }
+          50% {
+            width: 70%;
+          }
+          100% {
+            width: 100%;
+          }
+        }
+      `}</style>
         </div>
-      </div> 
-    )
+    );
 }

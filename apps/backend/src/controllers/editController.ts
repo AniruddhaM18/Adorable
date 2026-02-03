@@ -4,10 +4,10 @@ import { runEditAgentStream, runErrorFixStream } from "../editAgent.js";
 import { updateSandboxFiles, updateSandboxFilesTemporary, validateSandboxBuild } from "../sandbox.js";
 import { FileChange } from "../modifyTools.js";
 
-/* Constants for error recovery */
+// Constants for error recovery
 const MAX_FIX_ATTEMPTS = 3;
 
-/* Helper to convert nested files object to flat Record<string, string> */
+/// Helper to convert nested files object to flat Record<string, string> 
 
 function flattenFiles(
     files: any,
@@ -35,7 +35,7 @@ function flattenFiles(
     return result;
 }
 
-/* Helper to apply file changes to existing files */
+//Helper to apply file changes to existing files 
 
 function applyFileChanges(
     currentFiles: Record<string, string>,
@@ -55,7 +55,7 @@ function applyFileChanges(
     return newFiles;
 }
 
-/* Helper to convert flat files back to nested structure */
+//Helper to convert flat files back to nested structure 
 
 function unflattenFiles(flatFiles: Record<string, string>): any {
     const result: any = {};
@@ -79,7 +79,7 @@ function unflattenFiles(flatFiles: Record<string, string>): any {
     return result;
 }
 
-/* Edit project via chat */
+// Edit project via chat 
 
 export async function editProjectChat(req: Request, res: Response) {
     const { projectId } = req.params;
