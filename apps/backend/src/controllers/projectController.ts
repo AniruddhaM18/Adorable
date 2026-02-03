@@ -14,7 +14,7 @@ export async function createProject(req: Request, res: Response) {
     });
   }
 
-  console.log("prompt recived");
+  console.log("prompt received");
 
   const userId = req.user?.id;
 
@@ -43,7 +43,7 @@ export async function createProject(req: Request, res: Response) {
       });
     }
 
-    ///assembling files
+    // assembling files
     const projectFiles = await assembleProject(result.files);
 
     const { project, version } = await prisma.$transaction(
@@ -54,7 +54,7 @@ export async function createProject(req: Request, res: Response) {
             name: result.projectName ?? "Untitled Project",
             previewUrl: "",
             currentVersionId: "",
-            staus: "creating", // keeping schema spelling
+            staus: "creating",
           },
         });
 
@@ -70,8 +70,7 @@ export async function createProject(req: Request, res: Response) {
       }
     );
 
-//sandbox
-
+    // sandbox
     let sandbox;
     try {
       sandbox = await createSandbox(projectFiles);
@@ -87,8 +86,7 @@ export async function createProject(req: Request, res: Response) {
       });
     }
 
-//finalize project
-
+    // finalize project
     await prisma.project.update({
       where: { id: project.id },
       data: {
@@ -96,7 +94,7 @@ export async function createProject(req: Request, res: Response) {
         currentVersionId: version.id,
         staus: "ready",
       },
-     });
+    });
 
     return res.status(201).json({
       success: true,
@@ -113,7 +111,7 @@ export async function createProject(req: Request, res: Response) {
   }
 }
 
-//get 
+// get 
 
 export async function getProject(req: Request, res: Response) {
   try {
@@ -174,3 +172,4 @@ export async function getProject(req: Request, res: Response) {
     });
   }
 }
+
