@@ -17,42 +17,9 @@ export function InputBox() {
   async function handleSend() {
     if (!prompt.trim() || loading) return;
 
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${backendUrl}/project/create`, {
-        method: "POST",
-        credentials: "include", // REQUIRED for req.user
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }), //EXACT backend shape
-      });
-
-      // auth middleware failure
-      if (res.status === 401) {
-        router.push("/auth/signup");
-        return;
-      }
-
-      const data = await res.json();
-
-      // backend contract
-      if (!res.ok || data.success !== true) {
-        console.error("Create project failed:", data);
-        alert(data.message ?? "Failed to create project");
-        return;
-      }
-
-      // success → playground
-      setPrompt("");
-      router.push(`/playground/${data.projectId}`);
-    } catch (err) {
-      console.error("Network error:", err);
-      alert("Network error");
-    } finally {
-      setLoading(false);
-    }
+    // Navigate immediately to playground with prompt in query
+    const encodedPrompt = encodeURIComponent(prompt.trim());
+    router.push(`/playground/creating?prompt=${encodedPrompt}`);
   }
 
   return (
