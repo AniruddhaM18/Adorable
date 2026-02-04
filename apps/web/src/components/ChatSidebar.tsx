@@ -1,7 +1,10 @@
 "use client";
 
+import { FaArrowUp } from "react-icons/fa6";
+
 import { useState } from "react";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
+import LogoIcon from "@/components/ui/logo";
 
 type Message = {
   id: number;
@@ -172,10 +175,13 @@ export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
   }
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-[400px] bg-neutral-900 border-r border-slate-700 flex flex-col z-50">
+    <div className="fixed left-0 top-0 h-screen w-[400px] bg-[#111111] flex flex-col z-50">
       {/* Header */}
-      <div className="h-12 px-4 flex items-center border-b border-slate-700 text-sm font-medium text-white">
-        Adorable Chat
+      <div className="flex items-center h-12 px-4 pt-2 space-x-2 text-lg font-medium text-white">
+        <div>
+          <LogoIcon className="h-7 w-7 text-neutral-200" />
+        </div>
+        <h1>Adorable Chat</h1>
       </div>
 
       {/* Messages */}
@@ -194,7 +200,7 @@ export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
           >
             <div
               className={`max-w-[90%] rounded-lg px-4 py-3 text-sm ${m.role === "user"
-                ? "bg-blue-600 text-white"
+                ? "bg-blue-500/75 text-white"
                 : "bg-neutral-800 text-neutral-200"
                 }`}
             >
@@ -204,16 +210,25 @@ export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
         ))}
       </div>
 
-      {/* Input */}
-      <div className="border-t border-slate-700 p-3">
-        <textarea
-          rows={3}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Describe what you want to build or change…"
-          className="w-full resize-none rounded-md bg-neutral-800 p-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-        />
+      <div className="px-2 pb-1">
+
+        <div className="relative">
+          <textarea
+            rows={3}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask adorable…"
+            className="w-full resize-none rounded-lg bg-neutral-900 border border-neutral-700 p-2 pr-10 text-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-600/60"
+          />
+
+          <button
+            // onClick={handleSend}
+            className="absolute bottom-2 right-2 mb-2 flex h-9 w-9  items-center justify-center rounded-md bg-neutral-700 text-neutral-400 hover:bg-neutral-600 active:bg-neutral-700 transition"
+          >
+            <FaArrowUp size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

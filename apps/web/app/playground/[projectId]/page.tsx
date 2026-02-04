@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { ChatSidebar } from "@/src/components/ChatSidebar";
 import { ViewSelector } from "@/src/components/ViewSelector";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
@@ -23,13 +23,17 @@ function PlaygroundContent() {
   const [isLoading, setIsLoading] = useState(!isCreatingMode);
   const [isCreating, setIsCreating] = useState(isCreatingMode);
   const [error, setError] = useState<string | null>(null);
+  const createProjectStartedRef = useRef(false);
 
-  // Create project when in creating mode
+  // Create project when in creating mode (only once; avoids duplicate request from Strict Mode)
   useEffect(() => {
     if (!isCreatingMode) return;
+    if (createProjectStartedRef.current) return;
+    createProjectStartedRef.current = true;
 
     const prompt = searchParams.get("prompt");
     if (!prompt) {
+      createProjectStartedRef.current = false;
       router.push("/");
       return;
     }
@@ -131,7 +135,7 @@ function PlaygroundContent() {
 
 export default function PlaygroundPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-neutral-900" />}>
+    <Suspense fallback={<div className="h-screen bg-neutral-950" />}>
       <PlaygroundContent />
     </Suspense>
   );

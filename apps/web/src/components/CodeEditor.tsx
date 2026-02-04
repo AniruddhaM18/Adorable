@@ -14,8 +14,8 @@ export default function CodeEditor({
   return (
     <div className="h-full w-full overflow-hidden rounded-md border border-zinc-700">
       <Editor
-        key={path}                 // 🔑 FORCE MODEL CHANGE
-        path={path}               // 🔑 MONACO FILE ID
+        key={path}                 // FORCE MODEL CHANGE
+        path={path}               //MONACO FILE ID
         height="100%"
         value={value}
         language={language}

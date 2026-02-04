@@ -15,9 +15,6 @@ export function CardSpotlightSection() {
   );
 }
 
-/* ============================
-   Card 1 — Steps / List
-============================ */
 function AuthCard() {
   return (
     <CardSpotlight className="h-96 w-full">
@@ -61,9 +58,6 @@ function AnalyticsCard() {
   );
 }
 
-/* ============================
-   Card 3 — Feature + CTA
-============================ */
 function DeployCard() {
   return (
     <CardSpotlight className="h-96 w-full flex flex-col justify-between">
@@ -90,10 +84,7 @@ function DeployCard() {
   );
 }
 
-/* ============================
-   Shared Components
-============================ */
-function Step({ title }: { title: string }) {
+export function Step({ title }: { title: string }) {
   return (
     <li className="flex gap-2 items-start">
       <CheckIcon />

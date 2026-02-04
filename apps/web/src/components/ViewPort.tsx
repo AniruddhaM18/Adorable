@@ -1,6 +1,6 @@
 export function Viewport({ url }: { url: string }) {
   return (
-    <div className="h-full w-full bg-slate-900 overflow-hidden">
+    <div className="h-full w-full bg-neutral-900 overflow-hidden">
       <iframe
         src={url}
         className="h-full w-full border-0"

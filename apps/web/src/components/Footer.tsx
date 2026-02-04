@@ -4,6 +4,7 @@ import logo from "../../public/adlogo.png";
 import { FaSquareGithub, FaLinkedin, FaSquareXTwitter } from "react-icons/fa6";
 import { SiGmail } from "react-icons/si";
 import { SparklesCore } from "./ui/sparkles";
+import LogoIcon from "@/components/ui/logo";
 
 export default function Footer() {
   return (
@@ -11,9 +12,10 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6">
 
         <div className="flex justify-between pt-20">
-          <div className="h-25 w-25 ring-1 ring-inset ring-neutral-300/10 rounded-3xl">
-            <Image src={logo} alt="Logo" width={200} height={200} />
-          </div>
+   <div className="h-28 w-28 rounded-3xl ring-1 ring-inset ring-neutral-300/10 flex items-center justify-center">
+  <LogoIcon className="h-22 w-22 text-neutral-300" />
+</div>
+
 
           <div className="flex gap-8">
             <a
@@ -53,7 +55,8 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-center pt-28 pb-8 relative overflow-hidden">
-          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent bg-clip-text bg-linear-to-b from-neutral-600 via-neutral-800 to-zinc-950 relative z-20">
+          <h1 className="text-[22vw] leading-none font-normal text-center text-transparent 
+          bg-clip-text bg-linear-to-b from-neutral-600 via-neutral-800 to-zinc-950 relative z-20">
             Adorable
           </h1>
 
