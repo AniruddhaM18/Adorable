@@ -179,7 +179,7 @@ export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
       {/* Header */}
       <div className="flex items-center h-12 px-4 pt-2 space-x-2 text-lg font-medium text-white">
         <div>
-        <LogoIcon className="h-7 w-7 text-neutral-200" />
+          <LogoIcon className="h-7 w-7 text-neutral-200" />
         </div>
         <h1>Adorable Chat</h1>
       </div>
@@ -210,26 +210,25 @@ export function ChatSidebar({ projectId, onFilesUpdate }: ChatSidebarProps) {
         ))}
       </div>
 
-      {/* Input */}
       <div className="px-2 pb-1">
-     
-<div className="relative">
-  <textarea
-    rows={3}
-    value={input}
-    onChange={(e) => setInput(e.target.value)}
-    onKeyDown={handleKeyDown}
-    placeholder="Ask adorable…"
-    className="w-full resize-none rounded-lg bg-neutral-900 border border-neutral-700 p-2 pr-10 text-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-600/60"
-  />
 
-  <button
-    // onClick={handleSend}
-    className="absolute bottom-2 right-2 mb-2 flex h-9 w-9  items-center justify-center rounded-md bg-neutral-700 text-neutral-400 hover:bg-neutral-600 active:bg-neutral-700 transition"
-  >
-    <FaArrowUp size={18} />
-  </button>
-</div>
+        <div className="relative">
+          <textarea
+            rows={3}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask adorable…"
+            className="w-full resize-none rounded-lg bg-neutral-900 border border-neutral-700 p-2 pr-10 text-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-600/60"
+          />
+
+          <button
+            // onClick={handleSend}
+            className="absolute bottom-2 right-2 mb-2 flex h-9 w-9  items-center justify-center rounded-md bg-neutral-700 text-neutral-400 hover:bg-neutral-600 active:bg-neutral-700 transition"
+          >
+            <FaArrowUp size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );
