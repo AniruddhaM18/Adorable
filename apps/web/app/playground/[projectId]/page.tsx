@@ -131,7 +131,7 @@ function PlaygroundContent() {
 
 export default function PlaygroundPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-neutral-900" />}>
+    <Suspense fallback={<div className="h-screen bg-neutral-950" />}>
       <PlaygroundContent />
     </Suspense>
   );
