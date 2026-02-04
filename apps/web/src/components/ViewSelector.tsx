@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { IoMdGlobe } from "react-icons/io";
 import { IoReload } from "react-icons/io5";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
-import Loader from "./Loader";
+// import Loader from "./Loader";
+import TerminalLoader from "./termloader";
 
 type ViewSelectorProps = {
   projectId: string;
@@ -73,19 +74,20 @@ export function ViewSelector({
   // Show Loader when creating project
   if (isCreating) {
     return (
-      <div className="h-screen bg-neutral-900 pl-[404px] pt-12 pr-1 pb-1">
-        <div className="h-full border border-neutral-700 rounded-md overflow-hidden">
-          <Loader />
-        </div>
-      </div>
+<div className="h-screen bg-[#111111] pl-[404px] pt-12 pr-1 pb-2">
+  <div className="relative h-full border border-neutral-700 rounded-md overflow-hidden">
+    <TerminalLoader />
+  </div>
+</div>
+
     );
   }
 
   return (
-    <div className="h-screen bg-neutral-900 pl-[404px] pt-1 pr-1 pb-0.5">
+    <div className="h-screen bg-[#111111] pl-[404px] pt-2 pr-2 pb-3">
       <Tabs defaultValue="code" className="flex h-full flex-col w-full">
         <div className="flex items-center justify-between">
-          <TabsList className="border border-slate-600 bg-neutral-900">
+          <TabsList className="border border-blue-600/60 bg-neutral-900">
             <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="code">
               <FaCode className="mr-1 h-4 w-4" /> Code
