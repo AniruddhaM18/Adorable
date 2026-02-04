@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NEXT_PUBLIC_BACKEND_URL } from "@/config";
+import LogoIcon from "./ui/logo";
 
 const backendUrl = NEXT_PUBLIC_BACKEND_URL;
 
@@ -62,9 +63,9 @@ export function SignupForm({
               href="/"
               className="flex flex-col items-center gap-2 font-medium"
             >
-              <div className="flex size-12 items-center justify-center rounded-md">
-                <Image src={logo} alt="logo" height={200} width={200} />
-              </div>
+    <div className="flex size-12 items-center justify-center rounded-md">
+  <LogoIcon className="h-12 w-12 text-neutral-300" />
+</div>
               <span className="sr-only">Adorable</span>
             </Link>
 

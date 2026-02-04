@@ -1,6 +1,7 @@
 import Image from "next/image";
 import logo from "../../public/adlogo.png";
 import Link from "next/link";
+import LogoIcon from "@/components/ui/logo";
 
 export function Navbar() {
   return (
@@ -9,15 +10,16 @@ export function Navbar() {
         <div className="flex items-center gap-12">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div
-              className="
-                w-12 h-12 rounded-md mr-2
-                flex items-center justify-center
-                drop-shadow-[0_0_6px_rgba(255,255,255,0.10)]
-              "
-            >
-              <Image src={logo} alt="Logo" width={200} height={200} />
-            </div>
+<div
+  className="
+    w-12 h-12 rounded-md mr-2
+    flex items-center justify-center
+    drop-shadow-[0_0_6px_rgba(255,255,255,0.10)]
+  "
+>
+  <LogoIcon className="w-10 h-10 text-neutral-300" />
+</div>
+
             <span className="text-xl font-semibold text-gray-200">
               Adorable
             </span>
