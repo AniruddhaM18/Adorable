@@ -62,17 +62,19 @@ export async function deployToCloudflareViaSandbox(
         const escapedName = safeName.replace(/'/g, "'\"'\"'");
         const createCmd = `CLOUDFLARE_ACCOUNT_ID='${CLOUDFLARE_ACCOUNT_ID}' CLOUDFLARE_API_TOKEN='${CLOUDFLARE_API_TOKEN}' npx wrangler pages project create '${escapedName}' --production-branch main 2>&1`;
 
-        console.log("Creating Cloudflare Pages project...");
-        const createResult = await sbx.commands.run(createCmd, { timeoutMs: 30000 });
-
-        if (createResult.exitCode === 0) {
+        // Try to create the project, but gracefully handle if it already exists
+        // e2b throws CommandExitError on non-zero exit codes, so we need try-catch
+        try {
+            const createResult = await sbx.commands.run(createCmd, { timeoutMs: 30000 });
             console.log("Cloudflare Pages project created successfully");
-        } else {
-            const output = createResult.stdout || createResult.stderr || "";
-            if (output.includes("already exists") || output.includes("8000000") || output.includes("resource already")) {
+        } catch (createError: any) {
+            // Check if the error contains "already exists" - that's fine, we can proceed
+            const output = createError?.result?.stdout || createError?.result?.stderr || createError?.message || "";
+            if (output.includes("already exists") || output.includes("8000002") || output.includes("8000000") || output.includes("resource already")) {
                 console.log("Cloudflare Pages project already exists, proceeding with deploy");
             } else {
-                console.warn("Project create had issues, proceeding with deploy:", output);
+                // It's some other error during project creation - log but still try to deploy
+                console.warn("Project create had issues, proceeding with deploy anyway:", output);
             }
         }
 
