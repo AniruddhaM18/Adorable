@@ -119,6 +119,14 @@ pnpm run dev
 
 GitHub Actions runs on pull requests to `main`: installs dependencies with pnpm and runs `pnpm run build` (see `.github/workflows/ci.yaml`).
 
+## Project Demo
+
+https://github.com/user-attachments/assets/834ed5ad-fb85-4a12-bb17-4f0404bd3466
+
+
+
 ## License
 
 MIT
+
+
