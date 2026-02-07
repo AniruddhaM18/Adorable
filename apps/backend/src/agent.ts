@@ -81,12 +81,9 @@ const createTool = tool(
   }
 );
 
-/* ------------------------------------------------------------------ */
-/* LLM */
-/* ------------------------------------------------------------------ */
 
 const llm = new ChatOpenAI({
-  model: "openai/o4-mini",
+  model: "anthropic/claude-opus-4.5",
   apiKey: OPENROUTER_API_KEY,
   temperature: 0,
   configuration: {

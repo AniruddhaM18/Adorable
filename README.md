@@ -1,199 +1,124 @@
-# Turborepo + Prisma ORM starter
+# Adorable
 
-This is a example designed to help you quickly set up a Turborepo monorepo with a Next.js app and Prisma ORM. This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+AI-powered app builder: describe your idea in natural language, get a full-stack app generated and run in a sandbox, then deploy to the web.
 
-## What's inside?
+## Features
 
-This turborepo includes the following packages/apps:
+- **Natural language to app** — Describe what you want; a LangGraph-based agent generates the project (files and structure).
+- **Live preview** — Generated apps run in isolated [E2B](https://e2b.dev/) sandboxes with a live preview URL.
+- **Code playground** — Edit code in-browser with Monaco, chat to refine the app, and see changes in real time.
+- **One-click deploy** — Deploy any project to [Cloudflare Pages](https://pages.cloudflare.com/) from the UI.
+- **Auth & projects** — Sign up / sign in, persistent projects, and version history.
 
-### Apps and packages
+## Tech stack
 
-- `web`: a [Next.js](https://nextjs.org/) app
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/database`: [Prisma ORM](https://prisma.io/) to manage & access your database
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+| Layer | Technologies |
+|-------|--------------|
+| **Monorepo** | [Turborepo](https://turbo.build/), [pnpm](https://pnpm.io/) workspaces |
+| **Frontend** | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Monaco Editor](https://microsoft.github.io/monaco-editor/), [Three.js](https://threejs.org/) / React Three Fiber |
+| **Backend** | [Express](https://expressjs.com/), [Prisma](https://www.prisma.io/), [PostgreSQL](https://www.postgresql.org/) |
+| **AI** | [LangChain](https://js.langchain.com/) + [LangGraph](https://langchain-ai.github.io/langgraphjs/), [OpenRouter](https://openrouter.ai/) (e.g. OpenAI models) |
+| **Runtime** | [E2B Code Interpreter](https://e2b.dev/) (sandboxed execution & preview) |
+| **Deploy** | [Cloudflare Pages](https://pages.cloudflare.com/) (via Wrangler in E2B) |
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Project structure
 
-### Utilities
+```
+Adorable/
+├── apps/
+│   ├── web/          # Next.js app (landing, auth, playground, deploy)
+│   └── backend/      # Express API (auth, projects, chat, deploy)
+├── packages/
+│   ├── database/     # Prisma schema, client, migrations
+│   ├── config-eslint/
+│   └── config-typescript/
+├── docker-compose.yml
+├── turbo.json
+└── pnpm-workspace.yaml
+```
 
-This turborepo has some additional tools already setup for you:
+**Note:** The app uses **PostgreSQL** in production (see `packages/database/prisma/schema.prisma`). The repo’s `docker-compose.yml` uses MySQL; for local dev use a Postgres instance or adjust Docker accordingly.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Prisma ORM](https://prisma.io/) for accessing the database
-- [Docker Compose](https://docs.docker.com/compose/) for a local MySQL database
+## Prerequisites
+
+- **Node.js** ≥ 18 (recommended: 20)
+- **pnpm** 10.x (`npm i -g pnpm`)
+- **PostgreSQL** (or MySQL if using the existing Docker setup)
+- API keys: **OpenRouter**, **E2B**, and optionally **Cloudflare** (for deploy)
 
 ## Getting started
 
-Follow these steps to set up and run your Turborepo project with Prisma ORM:
-
-### 1. Create a Turborepo project
-
-Start by creating a new Turborepo project using the following command:
-
-```sh
-npx create-turbo@latest -e with-prisma
-```
-
-Choose your desired package manager when prompted and a name for the app (e.g., `my-turborepo`). This will scaffold a new Turborepo project with Prisma ORM included and dependencies installed.
-
-Navigate to your project directory:
+### 1. Clone and install
 
 ```bash
-cd ./my-turborepo
+git clone <your-repo-url>
+cd Adorable
+pnpm install
 ```
 
-### 2. Setup a local database with Docker Compose
+### 2. Environment variables
 
-We use [Prisma ORM](https://prisma.io/) to manage and access our database. As such you will need a database for this project, either locally or hosted in the cloud.
+Create `.env` in the relevant apps/packages. Example for backend and database:
 
-To make this process easier, a [`docker-compose.yml` file](./docker-compose.yml) is included to setup a MySQL server locally with a new database named `turborepo`:
+```env
+# Database (PostgreSQL recommended)
+DATABASE_URL="postgresql://user:password@localhost:5432/adorable"
 
-Start the MySQL database using Docker Compose:
+# AI (required for project generation and chat)
+OPENROUTER_API_KEY="sk-or-..."
 
-```sh
-docker-compose up -d
+# Sandbox & preview (required for running generated apps)
+E2B_API_KEY="e2b_..."
+
+# Optional: deploy to Cloudflare Pages
+CLOUDFLARE_ACCOUNT_ID=""
+CLOUDFLARE_API_TOKEN=""
+
+# Frontend URL (for CORS)
+FRONTEND_URL="http://localhost:3000"
 ```
 
-To change the default database name, update the `MYSQL_DATABASE` environment variable in the [`docker-compose.yml` file](/docker-compose.yml).
+For the Next.js app (`apps/web`):
 
-### 3. Setup environment variables
+```env
+NEXT_PUBLIC_BACKEND_URL="http://localhost:3001"
+```
 
-Once the database is ready, copy the `.env.example` file to the [`/packages/database`](./packages/database/) and [`/apps/web`](./apps/web/) directories as `.env`:
+### 3. Database
 
 ```bash
-cp .env.example ./packages/database/.env
-cp .env.example ./apps/web/.env
-```
-
-This ensures Prisma has access to the `DATABASE_URL` environment variable, which is required to connect to your database.
-
-If you added a custom database name, or use a cloud based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
-
-### 4. Migrate your database
-
-Once your database is running, you’ll need to create and apply migrations to set up the necessary tables. Run the database migration command:
-
-```bash
-# Using npm
-npm run db:migrate:dev
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run db:migrate:dev
-
-# Using pnpm
+pnpm run generate
 pnpm run db:migrate:dev
-
-# Using bun
-bun run db:migrate:dev
+pnpm run db:seed   # optional
 ```
 
-</details>
-
-You’ll be prompted to name the migration. Once you provide a name, Prisma will create and apply the migration to your database.
-
-> Note: The `db:migrate:dev` script (located in [packages/database/package.json](/packages/database/package.json)) uses [Prisma Migrate](https://www.prisma.io/migrate) under the hood.
-
-For production environments, always push schema changes to your database using the [`prisma migrate deploy` command](https://www.prisma.io/docs/orm/prisma-client/deployment/deploy-database-changes-with-prisma-migrate). You can find an example `db:migrate:deploy` script in the [`package.json` file](/packages/database/package.json) of the `database` package.
-
-### 5. Seed your database
-
-To populate your database with initial or fake data, use [Prisma's seeding functionality](https://www.prisma.io/docs/guides/database/seed-database).
-
-Update the seed script located at [`packages/database/src/seed.ts`](/packages/database/src/seed.ts) to include any additional data that you want to seed. Once edited, run the seed command:
+### 4. Run the app
 
 ```bash
-# Using npm
-npm run db:seed
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run db:seed
-
-# Using pnpm
-pnpm run db:seed
-
-# Using bun
-bun run db:seed
-```
-
-</details>
-
-### 6. Build your application
-
-To build all apps and packages in the monorepo, run:
-
-```bash
-# Using npm
-npm run build
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run build
-
-# Using pnpm
-pnpm run build
-
-# Using bun
-bun run build
-```
-
-</details>
-
-### 7. Start the application
-
-Finally, start your application with:
-
-```bash
-yarn run dev
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run dev
-
-# Using pnpm
 pnpm run dev
-
-# Using bun
-bun run dev
 ```
 
-</details>
+- **Web:** http://localhost:3000  
+- **Backend API:** http://localhost:3001  
 
-Your app will be running at `http://localhost:3000`. Open it in your browser to see it in action!
+## Scripts
 
-You can also read the official [detailed step-by-step guide from Prisma ORM](https://pris.ly/guide/turborepo?utm_campaign=turborepo-example) to build a project from scratch using Turborepo and Prisma ORM.
+| Command | Description |
+|---------|-------------|
+| `pnpm run dev` | Start all apps in development |
+| `pnpm run build` | Build all apps and packages |
+| `pnpm run lint` | Lint the monorepo |
+| `pnpm run format` | Format with Prettier |
+| `pnpm run db:migrate:dev` | Run Prisma migrations (dev) |
+| `pnpm run db:migrate:deploy` | Run Prisma migrations (production) |
+| `pnpm run db:push` | Push schema without migrations |
+| `pnpm run db:seed` | Seed the database |
+| `pnpm run generate` | Generate Prisma client and turbo deps |
 
-## Useful Links
+## CI
 
-Learn more about the power of Turborepo:
+GitHub Actions runs on pull requests to `main`: installs dependencies with pnpm and runs `pnpm run build` (see `.github/workflows/ci.yaml`).
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## License
+
+MIT

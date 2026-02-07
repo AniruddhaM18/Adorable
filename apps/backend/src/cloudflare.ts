@@ -57,8 +57,27 @@ export async function deployToCloudflareViaSandbox(
 
         console.log("Build successful, deploying with wrangler...");
 
-        // Install wrangler and deploy using environment variables
-        const deployCmd = `CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID} CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN} npx wrangler pages deploy dist --project-name=${safeName} 2>&1`;
+        // Ensure the Cloudflare Pages project exists (wrangler deploy does not create it)
+        // wrangler pages project create only accepts project-name; account is from env
+        const escapedName = safeName.replace(/'/g, "'\"'\"'");
+        const createCmd = `CLOUDFLARE_ACCOUNT_ID='${CLOUDFLARE_ACCOUNT_ID}' CLOUDFLARE_API_TOKEN='${CLOUDFLARE_API_TOKEN}' npx wrangler pages project create '${escapedName}' --production-branch main 2>&1`;
+
+        console.log("Creating Cloudflare Pages project...");
+        const createResult = await sbx.commands.run(createCmd, { timeoutMs: 30000 });
+
+        if (createResult.exitCode === 0) {
+            console.log("Cloudflare Pages project created successfully");
+        } else {
+            const output = createResult.stdout || createResult.stderr || "";
+            if (output.includes("already exists") || output.includes("8000000") || output.includes("resource already")) {
+                console.log("Cloudflare Pages project already exists, proceeding with deploy");
+            } else {
+                console.warn("Project create had issues, proceeding with deploy:", output);
+            }
+        }
+
+        // Deploy using environment variables (no --account-id; wrangler uses CLOUDFLARE_ACCOUNT_ID)
+        const deployCmd = `CLOUDFLARE_ACCOUNT_ID='${CLOUDFLARE_ACCOUNT_ID}' CLOUDFLARE_API_TOKEN='${CLOUDFLARE_API_TOKEN}' npx wrangler pages deploy dist --project-name='${escapedName}' 2>&1`;
 
         const deployResult = await sbx.commands.run(deployCmd, {
             timeoutMs: 120000, // 2 minutes for deploy
@@ -89,9 +108,10 @@ export async function deployToCloudflareViaSandbox(
         };
     } catch (error: any) {
         console.error("Cloudflare deployment error:", error);
+        console.error("Error stack:", error.stack);
         return {
             success: false,
-            error: error.message || "Deployment failed",
+            error: error.message || String(error) || "Deployment failed",
         };
     }
 }
