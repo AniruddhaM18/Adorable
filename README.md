@@ -1,6 +1,6 @@
 # Adorable
 
-AI-powered app builder: describe your idea in natural language, get a full-stack app generated and run in a sandbox, then deploy to the web.
+AI-powered app builder: describe your idea in natural language, get a full-stack landing page generated and run in a sandbox, then deploy to the web.
 
 ## Features
 
